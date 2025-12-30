@@ -10,6 +10,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
+
     /** @use HasFactory<\Database\Factories\UserFactory> */
    use HasApiTokens, HasRoles, HasFactory, Notifiable;
 
@@ -46,4 +47,7 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    
+
 }
