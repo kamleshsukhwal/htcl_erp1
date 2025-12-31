@@ -25,7 +25,7 @@ Route::post('/users', [UserController::class, 'store']);
 Route::post('/users/{id}/roles', [UserController::class, 'assignRole']);
 
 
-Route::post('/login', [AuthController::class, 'login']);
+Route::any('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
