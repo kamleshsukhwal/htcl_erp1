@@ -16,8 +16,6 @@ class ModuleController extends Controller
         ]);
     }
 
-
-    
     public function update(Request $request, $id)
     {
         $module = Module::findOrFail($id);
