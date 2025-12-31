@@ -24,6 +24,7 @@ Route::get('/users', [UserController::class, 'index']);
 Route::post('/users', [UserController::class, 'store']);
 Route::post('/users/{id}/roles', [UserController::class, 'assignRole']);
 
+
 /*** here new route will come */
 Route::post('/login', [AuthController::class, 'login']);
 
