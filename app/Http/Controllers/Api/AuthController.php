@@ -9,45 +9,45 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
-    {
-        $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required'
-        ]);
+   
+public function login(Request $request) 
+{
+    $request->validate([
+        'email'    => 'required|email',
+        'password' => 'required'
+    ]);
 
-        $user = User::where('email', $request->email)->first();
+    $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Invalid credentials'
-            ], 401);
-        }
-
-        $token = $user->createToken('erp-token')->plainTextToken;
-
+    if (!$user || !Hash::check($request->password, $user->password)) {
         return response()->json([
-            'status' => true,
-            'token'  => $token,
-            'user'   => $user,
-            'roles'  => $user->getRoleNames(),
-            'permissions' => $user->getAllPermissions()->pluck('name')
-        ]);
+            'status'  => false,
+            'message' => 'Invalid credentials'
+        ], 401);
     }
 
-    public function profile(Request $request)
-    {
-        return response()->json($request->user());
-    }
+    // Delete old tokens (optional but recommended for ERP)
+    $user->tokens()->delete();
 
-    public function logout(Request $request)
-    {
-        $request->user()->tokens()->delete();
+    // Create new token
+    $token = $user->createToken('erp-token')->plainTextToken;
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Logged out successfully'
-        ]);
-    }
+    // Roles & Permissions
+    $roles       = $user->getRoleNames();                // ['admin']
+    $role        = $roles->first();                      // 'admin'
+    $permissions = $user->getAllPermissions()->pluck('name'); 
+
+    return response()->json([
+        'status' => true,
+        'token'  => $token,
+        'user'   => [
+            'id'    => $user->id,
+            'name'  => $user->name,
+            'email' => $user->email,
+            'role'  => $role
+        ],
+        'roles'       => $roles,
+        'permissions' => $permissions
+    ]);
+}
 }
