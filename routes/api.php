@@ -1,19 +1,15 @@
 <?php
 
-<<<<<<< Updated upstream
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
-=======
+ 
 use App\Http\Controllers\Api\AccessController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\ModuleController;
 use App\Http\Controllers\Api\Admin\PermissionController;
 use App\Http\Controllers\Api\Admin\RoleController;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\Admin\UserController;
-use Illuminate\Support\Facades\Route;
-
+ 
 
 
 
@@ -31,10 +27,10 @@ Route::prefix('admin')
 Route::post('/users', [UserController::class, 'store']);
 Route::post('/users/{id}/roles', [UserController::class, 'assignRole']);
 });
-
+ 
     Route::get('/me/access', [AccessController::class, 'access'])
     ->middleware('auth:sanctum');
-
+ 
 
 Route::post('/login', [AuthController::class, 'login']);
 
