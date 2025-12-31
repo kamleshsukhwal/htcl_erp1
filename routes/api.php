@@ -14,6 +14,9 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
+
+
+
 Route::prefix('admin')
     ->middleware(['auth:sanctum', 'role:admin'])
     ->group(function () {
@@ -31,8 +34,7 @@ Route::post('/users/{id}/roles', [UserController::class, 'assignRole']);
 
     Route::get('/me/access', [AccessController::class, 'access'])
     ->middleware('auth:sanctum');
- 
->>>>>>> Stashed changes
+
 
 Route::post('/login', [AuthController::class, 'login']);
 
