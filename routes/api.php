@@ -26,7 +26,7 @@ Route::post('/users/{id}/roles', [UserController::class, 'assignRole']);
 
 
 /*** here new route will come */
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->name('api.login');
 
 Route::middleware('auth:sanctum')->group(function () {
 
