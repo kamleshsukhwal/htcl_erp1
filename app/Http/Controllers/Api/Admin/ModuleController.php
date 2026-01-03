@@ -21,7 +21,7 @@ class ModuleController extends Controller
     {
         $request->validate(['name' => 'required|unique:module,name']);
 
-        $module = Module::create(['name' => $request->name]);
+        $module = Module::create(['name' => $request->name,'is_enabled'=>$request->is_enabled]);
 
         return response()->json([
             'status' => true,
