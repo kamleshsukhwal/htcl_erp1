@@ -16,6 +16,19 @@ class ModuleController extends Controller
         ]);
     }
 
+
+      public function store(Request $request)
+    {
+        $request->validate(['name' => 'required|unique:module,name']);
+
+        $module = Module::create(['name' => $request->name]);
+
+        return response()->json([
+            'status' => true,
+            'role' => $module
+        ]);
+    }
+
     public function update(Request $request, $id)
     {
         $module = Module::findOrFail($id);
