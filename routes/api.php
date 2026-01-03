@@ -14,7 +14,7 @@ Route::prefix('admin')
 
         Route::get('/modules', [ModuleController::class, 'index']);
         Route::put('/modules/{id}', [ModuleController::class, 'update']);
-          Route::post('/modules', [ModuleController::class, 'store']);
+        Route::post('/modules', [ModuleController::class, 'store']);
         Route::apiResource('/roles', RoleController::class);
 
 });
