@@ -16,6 +16,7 @@ class BoqItem extends Model
         'total_amount',
         'scope',
         'approved_make',
-        'offered_make'
+        'offered_make',
+        'remarks'
     ];
 }

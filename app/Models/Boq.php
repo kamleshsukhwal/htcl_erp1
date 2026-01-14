@@ -4,14 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
- 
-    class Boq extends Model
+class Boq extends Model
 {
     protected $fillable = [
         'project_id',
         'boq_name',
         'discipline',
         'status',
+        'total_amount',
         'created_by'
     ];
 
@@ -25,4 +25,3 @@ use Illuminate\Database\Eloquent\Model;
         return $this->hasMany(BoqFile::class);
     }
 }
-

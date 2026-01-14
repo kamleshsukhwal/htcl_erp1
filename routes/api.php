@@ -6,7 +6,8 @@
     use App\Http\Controllers\Api\Admin\RoleController;
     use App\Http\Controllers\Api\AuthController;
     use App\Http\Controllers\Api\Admin\UserController;
-    use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\ClientController;
+use Illuminate\Support\Facades\Route;
 
     Route::prefix('admin')
         ->middleware(['auth:sanctum', 'role:admin'])
@@ -20,9 +21,13 @@
             Route::post('/modules', [ModuleController::class, 'store']);
             Route::apiResource('/roles', RoleController::class);
             Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions']);
-    });
+   
+   
+            });
 
-
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('clients', ClientController::class);
+});
     Route::apiResource('/permissions', PermissionController::class)
         ->only(['index', 'store']);
     Route::get('/users', [UserController::class, 'index']);
