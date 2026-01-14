@@ -13,15 +13,13 @@ class ClientController extends Controller
     public function index(Request $request)
     {
         $clients = Client::when($request->search, function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('client_code', 'like', '%' . $request->search . '%');
-            })
-            ->when($request->status, function ($q) use ($request) {
-                $q->where('status', $request->status);
-            })
-            ->latest()
-            ->paginate(10);
-
+        $q->where('name', 'like', '%' . $request->search . '%');
+    })
+    ->when($request->status, function ($q) use ($request) {
+        $q->where('status', $request->status);
+    })
+    ->latest()
+    ->paginate(10);
         return response()->json($clients);
     }
 
@@ -63,13 +61,13 @@ class ClientController extends Controller
     {
         $client = Client::findOrFail($id);
 
-        $request->validate([
-            'name'  => 'required|string|max:255',
-            'email' => 'nullable|email',
-            'phone' => 'nullable|string|max:20',
-            'gst_no'=> 'nullable|string|max:50',
-            'status'=> 'required|in:active,inactive'
-        ]);
+       $request->validate([
+    'name'  => 'sometimes|required|string|max:255',
+    'email' => 'sometimes|nullable|email',
+    'phone' => 'sometimes|nullable|string|max:20',
+    'gst_no'=> 'sometimes|nullable|string|max:50',
+    'status'=> 'sometimes|required|in:active,inactive'
+]);
 
         $client->update($request->all());
 
