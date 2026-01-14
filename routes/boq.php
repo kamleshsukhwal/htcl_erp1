@@ -9,7 +9,6 @@ Route::prefix('boqs')
 
         Route::post('/', [BoqController::class, 'store']);
         Route::get('/project/{projectId}', [BoqController::class, 'listByProject']);
-
         Route::post('/{boqId}/items', [BoqController::class, 'addItems']);
         Route::post('/{boqId}/upload', [BoqController::class, 'uploadFile']);
     });

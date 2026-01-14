@@ -15,36 +15,39 @@ class ProjectController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'project_name' => 'required',
-            'client_name' => 'required',
-            'start_date' => 'required|date'
-        ]);
+  public function store(Request $request)
+{
+    $request->validate([
+        'project_name' => 'required|string',
+        'project_code' => 'required|unique:projects,project_code',
+        'project_type' => 'required',
+        'billing_type' => 'in:boq,fixed,milestone',
+        'project_manager_id' => 'nullable|exists:users,id'
+    ]);
 
-        $project = Project::create([
-            'project_code' => 'PRJ-' . time(),
-            'project_name' => $request->project_name,
-            'client_name' => $request->client_name,
-            'client_email' => $request->client_email,
-            'client_phone' => $request->client_phone,
-            'project_type' => $request->project_type,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'project_value' => $request->project_value,
-            'status' => 'active',
-            'description' => $request->description,
-           // 'created_by' => auth()->id()
-            'created_by' => 43
-        ]);
+    $project = Project::create([
+        'project_name' => $request->project_name,
+        'project_code' => $request->project_code,
+        'client_name' => $request->client_name,
+        'client_email' => $request->client_email,
+        'client_phone' => $request->client_phone,
+        'project_type' => $request->project_type,
+        'start_date' => $request->start_date,
+        'end_date' => $request->end_date,
+        'project_value' => $request->project_value,
+        'approved_budget' => $request->approved_budget,
+        'billing_type' => $request->billing_type ?? 'boq',
+        'project_manager_id' => $request->project_manager_id,
+        'assigned_users' => $request->assigned_users,
+        'status' => 'active',
+        'created_by' => auth()->id()
+    ]);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Project created successfully',
-            'data' => $project
-        ]);
-    }
+    return response()->json([
+        'status' => true,
+        'data' => $project
+    ]);
+}
 
     public function show($id)
     {
@@ -52,15 +55,24 @@ class ProjectController extends Controller
     }
 
     public function update(Request $request, $id)
-    {
-        $project = Project::findOrFail($id);
-        $project->update($request->all());
+{
+    $project = Project::findOrFail($id);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Project updated'
-        ]);
-    }
+    $project->update([
+        'progress_percent' => $request->progress_percent,
+        'actual_cost' => $request->actual_cost,
+        'remarks' => $request->remarks,
+        'assigned_users' => $request->assigned_users,
+        'project_manager_id' => $request->project_manager_id,
+        'status' => $request->status
+    ]);
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Project updated successfully'
+    ]);
+}
+
 
     public function destroy($id)
     {
