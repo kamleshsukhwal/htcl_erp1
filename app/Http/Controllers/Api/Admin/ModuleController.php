@@ -12,16 +12,15 @@ class ModuleController extends Controller
     {
         return response()->json([
             'status' => true,
-            'data' => Module::all()
-        ]);
-    }
-
+            'data' => Module::all() 
+        ]);   
+     }
 
       public function store(Request $request)
     {
-        $request->validate(['name' => 'required|unique:module,name']);
+        $request->validate(['name' => 'required|unique:modules,name']);
 
-        $module = Module::create(['name' => $request->name,'is_enabled'=>$request->is_enabled]);
+        $module = Module::create(['name' => $request->name]);
 
         return response()->json([
             'status' => true,

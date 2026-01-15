@@ -6,21 +6,33 @@
     use App\Http\Controllers\Api\Admin\RoleController;
     use App\Http\Controllers\Api\AuthController;
     use App\Http\Controllers\Api\Admin\UserController;
-    use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\ClientController;
+use Illuminate\Support\Facades\Route;
 
     Route::prefix('admin')
         ->middleware(['auth:sanctum', 'role:admin'])
         ->group(function () {
- 
+
         Route::get('/modules', [ModuleController::class, 'index']);
         Route::put('/modules/{id}', [ModuleController::class, 'update']);
         Route::post('/modules', [ModuleController::class, 'store']);
         Route::apiResource('/roles', RoleController::class);
- 
-    });
+
+            Route::get('/modules', [ModuleController::class, 'index']);
+            Route::put('/modules/{id}', [ModuleController::class, 'update']);
+            Route::post('/modules', [ModuleController::class, 'store']);
+            Route::apiResource('/roles', RoleController::class);
+            Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions']);
+   
+   
+            });
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('clients', ClientController::class);
+});
+
     Route::apiResource('/permissions', PermissionController::class)
         ->only(['index', 'store']);
-        Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions']);
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users', [UserController::class, 'store']);
     Route::post('/users/{id}/roles', [UserController::class, 'assignRole']);

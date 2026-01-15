@@ -10,6 +10,13 @@ use Illuminate\Support\Facades\Hash;
 class AuthController extends Controller
 {
    
+public function profile(Request $request)
+{
+    return response()->json([
+        'status' => true,
+        'data' => $request->user()
+    ]);
+}
 public function login(Request $request) 
 {
     $request->validate([
@@ -41,13 +48,15 @@ public function login(Request $request)
         'status' => true,
         'token'  => $token,
         'user'   => [
-            'id'    => $user->id,
-            'name'  => $user->name,
-            'email' => $user->email,
-            'role'  => $role
+        'id'    => $user->id,
+        'name'  => $user->name,
+        'email' => $user->email,
+        'role'  => $role
         ],
         'roles'       => $roles,
         'permissions' => $permissions
     ]);
 }
 }
+
+
