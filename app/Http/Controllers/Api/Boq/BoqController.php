@@ -8,6 +8,7 @@ use App\Models\Boq;
 use App\Models\BoqItem;
 use App\Models\BoqFile;
 use App\Models\Project;
+use Illuminate\Support\Facades\Auth;
 
 class BoqController extends Controller
 {
@@ -47,7 +48,7 @@ class BoqController extends Controller
             'discipline'   => $request->discipline,
             'status'       => 'draft',
             'total_amount' => 0,
-            'created_by'   => auth()->id()
+            'created_by'   => Auth::id()
         ]);
 
         return response()->json([
@@ -88,37 +89,37 @@ class BoqController extends Controller
 
     // 🔹 UPDATE BOQ ITEM
     public function updateItem(Request $request, $itemId)
-{
-    $item = BoqItem::findOrFail($itemId);
+    {
+        $item = BoqItem::findOrFail($itemId);
 
-   $request->validate([
-    'description'    => 'sometimes|string',
-    'unit'           => 'sometimes|string', // remove nullable if DB not nullable
-    'quantity'       => 'sometimes|numeric',
-    'rate'           => 'sometimes|numeric',
-    'scope'          => 'sometimes|nullable|string',
-    'approved_make'  => 'sometimes|nullable|string',
-    'offered_make'   => 'sometimes|nullable|string',
-]);
+        $request->validate([
+            'description'    => 'sometimes|string',
+            'unit'           => 'sometimes|string', // remove nullable if DB not nullable
+            'quantity'       => 'sometimes|numeric',
+            'rate'           => 'sometimes|numeric',
+            'scope'          => 'sometimes|nullable|string',
+            'approved_make'  => 'sometimes|nullable|string',
+            'offered_make'   => 'sometimes|nullable|string',
+        ]);
 
-    $item->update([
-        'sn' => $request->sn,
-        'description' => $request->description,
-        'unit' => $request->unit,
-        'quantity' => $request->quantity,
-        'rate' => $request->rate,
-        'total_amount' => $request->quantity * $request->rate,
-        'scope' => $request->scope,
-        'approved_make' => $request->approved_make,
-        'offered_make' => $request->offered_make,
-    ]);
+        $item->update([
+            'sn' => $request->sn,
+            'description' => $request->description,
+            'unit' => $request->unit,
+            'quantity' => $request->quantity,
+            'rate' => $request->rate,
+            'total_amount' => $request->quantity * $request->rate,
+            'scope' => $request->scope,
+            'approved_make' => $request->approved_make,
+            'offered_make' => $request->offered_make,
+        ]);
 
-    return response()->json([
-        'status' => true,
-        'message' => 'BOQ item updated successfully',
-        'data' => $item
-    ]);
-}
+        return response()->json([
+            'status' => true,
+            'message' => 'BOQ item updated successfully',
+            'data' => $item
+        ]);
+    }
 
 
     // 🔹 DELETE BOQ ITEM
@@ -183,7 +184,9 @@ class BoqController extends Controller
             'file_name'  => $fileName,
             'file_path'  => $path,
             'file_type'  => $file->getClientOriginalExtension(),
-            'uploaded_by'=> auth()->id()
+            'uploaded_by' => Auth::id()
+
+          
         ]);
 
         return response()->json([

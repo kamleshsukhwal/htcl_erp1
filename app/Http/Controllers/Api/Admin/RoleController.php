@@ -41,13 +41,13 @@ class RoleController extends Controller
     }
 
     public function assignPermissions(Request $request, $id)
-{
-    $role = Role::findOrFail($id);
-    $role->syncPermissions($request->permissions);
+    {
+        $role = Role::findOrFail($id);
+        $role->syncPermissions($request->permissions);
 
-    return response()->json([
-        'status' => true,
-        'message' => 'Permissions assigned'
-    ]);
-}
+        return response()->json([
+            'status' => true,
+            'message' => 'Permissions assigned'
+        ]);
+    }
 }

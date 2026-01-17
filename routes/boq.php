@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\Boq\BoqController;
+use App\Http\Controllers\Api\Boq\BoqItemProgressController;
+use App\Http\Controllers\Api\Boq\BoqRevisionController;
+ 
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('boqs')
@@ -11,6 +14,9 @@ Route::prefix('boqs')
         Route::get('/project/{projectId}', [BoqController::class, 'listByProject']);
         Route::post('/{boqId}/items', [BoqController::class, 'addItems']);
         Route::put('/items/{itemId}', [BoqController::class, 'updateItem']);
-       Route::post('/{boqId}/upload', [BoqController::class, 'uploadFile']);
-          Route::patch('/{boqId}/status', [BoqController::class, 'updateStatus']);
+        Route::post('/{boqId}/upload', [BoqController::class, 'uploadFile']);
+        Route::patch('/{boqId}/status', [BoqController::class, 'updateStatus']);
+        Route::post('boqs/{id}/revise', [BoqItemProgressController::class, 'revise']);
+        Route::post('boq-item-progress', [BoqRevisionController::class, 'store']);
+
     });

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Project\ProjectController;
+use App\Http\Controllers\Api\project\ProjectDashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('projects')
@@ -21,4 +22,8 @@ Route::prefix('projects')
 
         Route::delete('/{id}', [ProjectController::class, 'destroy'])
             ->middleware('permission:project.delete');
+
+            Route::get('projects/{id}/progress', [ProjectDashboardController::class, 'projectProgress']);
+Route::get('projects/{id}/boq-graph', [ProjectDashboardController::class, 'boqWiseValue']);
+
     });

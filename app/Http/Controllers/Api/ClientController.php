@@ -23,6 +23,7 @@ class ClientController extends Controller
         return response()->json($clients);
     }
 
+
     // 2️⃣ Store Client
     public function store(Request $request)
     {
@@ -84,7 +85,11 @@ class ClientController extends Controller
         $client->delete();
 
         return response()->json([
-            'message' => 'Client deleted successfully'
-        ]);
+            
+        'message' => 'Client deleted successfully'
+ 
+
+
+]);
     }
 }

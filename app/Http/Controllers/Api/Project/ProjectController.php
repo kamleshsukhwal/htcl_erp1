@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\Project;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Auth;
 class ProjectController extends Controller
 {
     // 1️⃣ List Projects
@@ -53,7 +53,8 @@ class ProjectController extends Controller
             'project_manager_id' => $request->project_manager_id,
             'assigned_users'     => $request->assigned_users,
             'status'             => 'active',
-            'created_by'         => auth()->id()
+            'created_by'         => Auth::id()
+            
         ]);
 
         return response()->json([
@@ -111,7 +112,8 @@ class ProjectController extends Controller
                 'remarks',
                 'description'
             ]) + [
-                'updated_by' => auth()->id()
+             //   'updated_by' => auth()->id()
+                'updated_by' => Auth::id()
             ]
         );
 
