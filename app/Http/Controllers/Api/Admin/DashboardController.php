@@ -8,22 +8,20 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-   public function index()
-{
-    return response()->json([
-        'system' => [
-            'users' => \App\Models\User::count(),
-            'roles' => \Spatie\Permission\Models\Role::count(),
-        ],
-        'modules' => \App\Models\Module::pluck('is_enabled', 'name'),
-        'summary' => [
-            'employees' => null,
-            'projects' => null,
-            'invoices' => null,
-            'boqs' => null,
-        ]
-    ]);
-}
-
-
+    public function index()
+    {
+        return response()->json([
+            'system' => [
+                'users' => \App\Models\User::count(),
+                'roles' => \Spatie\Permission\Models\Role::count(),
+            ],
+            'modules' => \App\Models\Module::pluck('is_enabled', 'name'),
+            'summary' => [
+                'employees' => null,
+                'projects' => null,
+                'invoices' => null,
+                'boqs' => null,
+            ]
+        ]);
+    }
 }
