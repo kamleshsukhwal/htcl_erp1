@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\Boq;
 
+use App\BoqItemsImport as AppBoqItemsImport;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Boq;
@@ -9,6 +11,7 @@ use App\Models\BoqItem;
 use App\Models\BoqFile;
 use App\Models\Project;
 use Illuminate\Support\Facades\Auth;
+ 
 
 class BoqController extends Controller
 {
@@ -151,9 +154,45 @@ class BoqController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'BOQ status updated'
+            'message' => 'BOQ status updated' // update item  file
         ]);
     }
+/// BOQ item upload from file.
+
+
+
+
+
+public function getBoqById($boqId)
+{
+    $boq = Boq::with([
+            'items' => function ($q) {
+                $q->orderBy('sn');
+            },
+            'files'
+        ])
+        ->findOrFail($boqId);
+
+    return response()->json([
+        'status' => true,
+        'data' => $boq
+    ]);
+}
+
+// JSON upload
+public function itemsByBoq($boqId)
+{
+    $items = BoqItem::where('boq_id', $boqId)
+        ->orderBy('sn')
+        ->get(); ///  file lock by admin
+
+    return response()->json([
+        'status' => true,
+        'data' => $items
+    ]);
+}
+
+
 
     // 🔹 SHOW FULL BOQ (HEADER + ITEMS + FILES)
     public function show($id)
@@ -163,7 +202,7 @@ class BoqController extends Controller
         return response()->json([
             'status' => true,
             'data' => $boq
-        ]);
+        ]); /// use composer json upload  package
     }
 
     // 🔹 UPLOAD BOQ FILE
@@ -183,7 +222,7 @@ class BoqController extends Controller
             'boq_id'     => $boqId,
             'file_name'  => $fileName,
             'file_path'  => $path,
-            'file_type'  => $file->getClientOriginalExtension(),
+            'file_type'  => $file->getClientOriginalExtension(), // should be .csv or .excel, .xls
             'uploaded_by' => Auth::id()
 
           
@@ -209,4 +248,61 @@ class BoqController extends Controller
             'actual_cost' => $projectTotal
         ]);
     }
+
+
+    public function bulkUpdateItems(Request $request, $boqId)
+{
+    $request->validate([
+        'items' => 'required|array|min:1',
+        'items.*.id' => 'required|exists:boq_items,id',
+        'items.*.quantity' => 'nullable|numeric',
+        'items.*.rate' => 'nullable|numeric',
+    ]);
+
+    DB::transaction(function () use ($request, $boqId) {
+
+        foreach ($request->items as $row) {
+
+            $item = BoqItem::where('id', $row['id'])
+                ->where('boq_id', $boqId)
+                ->firstOrFail();
+
+            $quantity = $row['quantity'] ?? $item->quantity;
+            $rate     = $row['rate'] ?? $item->rate;
+
+            $item->update([
+                'sn'            => $row['sn'] ?? $item->sn,
+                'description'   => $row['description'] ?? $item->description,
+                'unit'          => $row['unit'] ?? $item->unit,
+                'quantity'      => $quantity,
+                'rate'          => $rate,
+                'total_amount'  => $quantity * $rate,
+                'scope'         => $row['scope'] ?? $item->scope,
+                'approved_make' => $row['approved_make'] ?? $item->approved_make,
+                'offered_make'  => $row['offered_make'] ?? $item->offered_make,
+            ]);
+        }
+
+        $this->recalculateBoqAndProject($boqId);
+    });
+
+    return response()->json([
+        'status' => true,
+        'message' => 'BOQ items updated successfully'
+    ]);
+}
+
+ 
+
+public function importBoq(Request $request)
+{
+    $request->validate([
+        'file' => 'required|mimes:xlsx,csv',
+    ]);
+
+    (new AppBoqItemsImport)->import($request->file('file')->getPathname());
+
+    return back()->with('success', 'BOQ imported successfully');
+}
+
 }
