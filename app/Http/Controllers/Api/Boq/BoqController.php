@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\Boq;
 
-use App\BoqItemsImport as AppBoqItemsImport;
+
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -10,8 +10,11 @@ use App\Models\Boq;
 use App\Models\BoqItem;
 use App\Models\BoqFile;
 use App\Models\Project;
+use App\import\BoqItemsImport;
+use App\Imports\BoqItemsImport as ImportsBoqItemsImport;
+use App\Models\BoqItemHistory;
 use Illuminate\Support\Facades\Auth;
- 
+use Illuminate\Support\Facades\Storage; 
 
 class BoqController extends Controller
 {
@@ -249,7 +252,7 @@ public function itemsByBoq($boqId)
         ]);
     }
 
-
+/*  code is working but to make history commented*/
     public function bulkUpdateItems(Request $request, $boqId)
 {
     $request->validate([
@@ -291,18 +294,68 @@ public function itemsByBoq($boqId)
         'message' => 'BOQ items updated successfully'
     ]);
 }
-
  
-
-public function importBoq(Request $request)
+public function importBoq(Request $request, Boq $boq)
 {
     $request->validate([
-        'file' => 'required|mimes:xlsx,csv',
+        'file' => 'required|file|mimes:xlsx,csv'
     ]);
 
-    (new AppBoqItemsImport)->import($request->file('file')->getPathname());
+    // Store file
+    $path = $request->file('file')->store('imports');
 
-    return back()->with('success', 'BOQ imported successfully');
+    // Absolute path
+    $fullPath = storage_path('app/' . $path);
+
+    // 🔍 Debug safety check
+    if (!file_exists($fullPath)) {
+        logger()->error('File not saved', [
+            'path' => $fullPath
+        ]);
+        return response()->json(['error' => 'File upload failed'], 500);
+    }
+
+    (new ImportsBoqItemsImport())->import($fullPath, $boq->id);
+
+    return response()->json([
+        'status' => true,
+        'message' => 'BOQ imported successfully'
+    ]);
+}
+
+/**** bulk update */
+public function bulkUpdate(Request $request)
+{
+    DB::transaction(function () use ($request) {
+
+        foreach ($request->items as $item) {
+
+            $boqItem = BoqItem::findOrFail($item['id']);
+
+            // 1️⃣ Store history
+            BoqItemHistory::create([
+                'boq_item_id' => $boqItem->id,
+                'boq_id'      => $boqItem->boq_id,
+                'old_quantity'=> $boqItem->quantity,
+                'new_quantity'=> $item['quantity'],
+                'old_rate'    => $boqItem->rate,
+                'new_rate'    => $item['rate'] ?? $boqItem->rate,
+                'changed_by'  => auth()->id(),
+                'change_reason' => 'Manual BOQ edit'
+            ]);
+
+            // 2️⃣ Update live BOQ item
+            $boqItem->update([
+                'quantity' => $item['quantity'],
+                'rate'     => $item['rate'] ?? $boqItem->rate,
+                'amount'   => $item['quantity'] * ($item['rate'] ?? $boqItem->rate)
+            ]);
+        }
+    });
+
+    return response()->json([
+        'message' => 'BOQ items updated successfully'
+    ]);
 }
 
 }
