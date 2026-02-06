@@ -8,6 +8,8 @@ class BoqItemProgress extends Model
  {
     protected $fillable = [
         'boq_item_id',
+        'dc_type',
+        'dc_no',
         'executed_qty',
         'entry_date',
         'remarks'

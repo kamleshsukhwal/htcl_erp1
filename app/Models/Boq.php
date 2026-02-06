@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Project;
+use App\Models\BoqItem;
+use App\Models\BoqFile;
 
 class Boq extends Model
 {
@@ -23,5 +26,10 @@ class Boq extends Model
     public function files()
     {
         return $this->hasMany(BoqFile::class);
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(Project::class, 'project_id');
     }
 }

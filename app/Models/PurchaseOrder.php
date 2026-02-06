@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Model;
 
 class PurchaseOrder extends Model
@@ -13,6 +12,7 @@ class PurchaseOrder extends Model
         'order_date',
         'total_amount',
         'status',
+        //'boq_id',
     ];
 
     public function items()
