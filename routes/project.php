@@ -78,7 +78,7 @@ Route::prefix('vendors')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::prefix('purchase-orders')->group(function () {
-
+ Route::get('/', [PurchaseOrderController::class, 'index']); 
         Route::post('/', [PurchaseOrderController::class, 'store']); // Create PO
         Route::get('/{id}', [PurchaseOrderController::class, 'show']);
         Route::get('/project/{project_id}', [PurchaseOrderController::class, 'byProject']);

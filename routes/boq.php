@@ -89,6 +89,6 @@ Route::get(
     [BoqItemController::class, 'historyByDate']
 );
 
-            Route::post('/item-progress',[BoqItemProgressController::class, 'store']
-)->middleware('permission:boq.update');
+  Route::post('/item-progress',[BoqItemProgressController::class, 'store']
+);
     });

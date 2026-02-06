@@ -10,7 +10,7 @@ class PurchaseOrderItem extends Model
     // protected $table = 'purchase_order_items';
 
     // Allow mass assignment
-  protected $fillable = ['purchase_order_id', 'item_name', 'quantity', 'unit_price', 'total'];
+  protected $fillable = ['purchase_order_id',  'item_name', 'ordered_qty', 'boq_id','unit_price', 'total'];
 
 public function purchaseOrder()
 {

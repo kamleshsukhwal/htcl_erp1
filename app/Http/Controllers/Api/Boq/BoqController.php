@@ -358,4 +358,32 @@ public function bulkUpdate(Request $request)
     ]);
 }
 
+// 🔹 LIST ALL BOQs
+public function index(Request $request)
+{
+    $query = Boq::with([
+        'project:id,project_name',
+    ])->withCount('items');
+
+    // Optional filters
+    if ($request->project_id) {
+        $query->where('project_id', $request->project_id);
+    }
+
+    if ($request->discipline) {
+        $query->where('discipline', $request->discipline);
+    }
+
+    if ($request->status) {
+        $query->where('status', $request->status);
+    }
+
+    $boqs = $query->latest()->get();
+
+    return response()->json([
+        'status' => true,
+        'data'   => $boqs
+    ]);
+}
+
 }

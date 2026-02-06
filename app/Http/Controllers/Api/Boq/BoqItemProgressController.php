@@ -13,6 +13,8 @@ class BoqItemProgressController extends Controller
     $request->validate([
         'boq_item_id' => 'required|exists:boq_items,id',
         'executed_qty' => 'required|numeric|min:0',
+        'dc_type' =>'required',
+        'dc_no' => 'required',
         'entry_date' => 'required|date'
     ]);
 
