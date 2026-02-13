@@ -11,13 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::create('boqs', function (Blueprint $table) {
+       Schema::create('dc_outs', function (Blueprint $table) {
     $table->id();
+    $table->string('dc_number')->unique();
     $table->unsignedBigInteger('project_id');
-    $table->string('boq_name');
-    $table->string('discipline');
-    $table->enum('status', ['draft','approved'])->default('draft');
-    $table->unsignedBigInteger('created_by');
+    $table->date('issue_date');
+    $table->string('issued_to')->nullable();
     $table->timestamps();
 });
     }
@@ -27,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('boqs');
+        Schema::dropIfExists('dc_outs');
     }
 };

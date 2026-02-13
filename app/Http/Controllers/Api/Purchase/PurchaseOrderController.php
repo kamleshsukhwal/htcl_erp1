@@ -32,7 +32,7 @@ use Illuminate\Support\Facades\DB;
             'items'         => 'required|array|min:1',
             'items.*.item_name'   => 'required|string',
             'items.*.ordered_qty'    => 'required|numeric',
-            'item.*.boq_id'=> 'required|numeric',
+            'items.*.boq_item_id'=> 'required|numeric', /// used for boq_item_id  
             'items.*.unit_price'  => 'required|numeric',
             'items.*.total'       => 'required|numeric',
         ]);
@@ -49,7 +49,7 @@ use Illuminate\Support\Facades\DB;
             foreach ($request->items as $item) {
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $po->id,
-                  'boq_id' => $item['boq_id'],
+                  'boq_item_id' => $item['boq_item_id'],
                     'item_name'         => $item['item_name'],
                     'ordered_qty'          => $item['ordered_qty'],
                     'unit_price'        => $item['unit_price'],
@@ -90,6 +90,18 @@ use Illuminate\Support\Facades\DB;
         'message' => 'Purchase Order details',
         'data' => $po
     ], 200);
+}
+public function approve($id)
+{
+    $po = PurchaseOrder::findOrFail($id);
+
+    if ($po->status !== 'pending') {
+        return response()->json(['error' => 'Already processed']);
+    }
+
+    $po->update(['status' => 'approved']);
+
+    return response()->json(['message' => 'PO Approved']);
 }
 
 }

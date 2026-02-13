@@ -28,7 +28,9 @@ Route::prefix('boq')
 
         Route::post('/', [BoqController::class, 'store'])
             ->middleware('permission:boq.create');
-
+  Route::get('/item-progress',[BoqItemProgressController::class, 'show']); // get data
+  Route::get('/item-progress/{id}',[BoqItemProgressController::class, 'show']); // get data
+  
         Route::get('/{id}', [BoqController::class, 'show'])
             ->middleware('permission:boq.view');
 
@@ -73,12 +75,7 @@ Route::get('/items/{id}/history', function ($id) {
         ->get();
 });
 
-/*  with permssion
-Route::put(
-    '/{boqId}/items/bulk-update',
-    [BoqItemController::class, 'bulkUpdateItems']
-)->middleware(['auth:sanctum', 'permission:boq.update']);
-*/
+ 
 Route::put(
     '/{boqId}/items/bulk-update',
     [BoqItemController::class, 'bulkUpdateItems']
@@ -89,6 +86,9 @@ Route::get(
     [BoqItemController::class, 'historyByDate']
 );
 
-  Route::post('/item-progress',[BoqItemProgressController::class, 'store']
-);
+  Route::post('/item-progress',[BoqItemProgressController::class, 'store']); //store and get data
+
+
+  
+  
     });

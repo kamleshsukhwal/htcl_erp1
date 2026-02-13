@@ -9,8 +9,19 @@ class PurchaseOrderItem extends Model
     // If your table name is standard 'purchase_order_items', you can skip this
     // protected $table = 'purchase_order_items';
 
-    // Allow mass assignment
-  protected $fillable = ['purchase_order_id',  'item_name', 'ordered_qty', 'boq_id','unit_price', 'total'];
+protected $fillable = [
+    'purchase_order_id',
+    'boq_item_id',
+    'ordered_qty',
+    'unit_price',
+    'total',
+    'item_name'
+];
+
+public function boqItem()
+{
+    return $this->belongsTo(BoqItem::class);
+}
 
 public function purchaseOrder()
 {

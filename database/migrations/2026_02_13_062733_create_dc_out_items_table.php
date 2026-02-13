@@ -11,15 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::create('boqs', function (Blueprint $table) {
+       Schema::create('dc_out_items', function (Blueprint $table) {
     $table->id();
-    $table->unsignedBigInteger('project_id');
-    $table->string('boq_name');
-    $table->string('discipline');
-    $table->enum('status', ['draft','approved'])->default('draft');
-    $table->unsignedBigInteger('created_by');
+    $table->unsignedBigInteger('dc_out_id');
+    $table->unsignedBigInteger('boq_item_id');
+    $table->decimal('issued_qty', 12, 2);
     $table->timestamps();
+
+    $table->foreign('dc_out_id')->references('id')->on('dc_outs')->onDelete('cascade');
 });
+
     }
 
     /**
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('boqs');
+        Schema::dropIfExists('dc_out_items');
     }
 };
