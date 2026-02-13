@@ -10,7 +10,7 @@ use App\Models\Boq;
 use App\Models\BoqItem;
 use App\Models\BoqFile;
 use App\Models\Project;
-use App\import\BoqItemsImport;
+use App\imports\BoqItemsImport;
 use App\Imports\BoqItemsImport as ImportsBoqItemsImport;
 use App\Models\BoqItemHistory;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +18,13 @@ use Illuminate\Support\Facades\Storage;
 
 class BoqController extends Controller
 {
+
+
+public function index()
+{
+    return Boq::latest()->get();
+}
+
     // 🔹 LIST BOQS BY PROJECT
     public function listByProject(Request $request, $projectId)
     {
@@ -166,21 +173,8 @@ class BoqController extends Controller
 
 
 
-public function getBoqById($boqId)
-{
-    $boq = Boq::with([
-            'items' => function ($q) {
-                $q->orderBy('sn');
-            },
-            'files'
-        ])
-        ->findOrFail($boqId);
 
-    return response()->json([
-        'status' => true,
-        'data' => $boq
-    ]);
-}
+
 
 // JSON upload
 public function itemsByBoq($boqId)
@@ -196,17 +190,53 @@ public function itemsByBoq($boqId)
 }
 
 
+// 🔹 SHOW BOQ DETAILS WITH ITEMS AND FILES
+public function show($id)
+{
+    $boq = Boq::with('files')->findOrFail($id);
 
-    // 🔹 SHOW FULL BOQ (HEADER + ITEMS + FILES)
-    public function show($id)
-    {
-        $boq = Boq::with(['items', 'files'])->findOrFail($id);
+    $items = DB::table('boq_items as bi')
+        ->leftJoinSub(
+            DB::table('boq_item_progress')
+                ->select(
+                    'boq_item_id',
+                    DB::raw('SUM(executed_qty) as executed_qty')
+                )
+                ->groupBy('boq_item_id'),
+            'bp',
+            'bp.boq_item_id',
+            '=',
+            'bi.id'
+        )
+        ->select(
+            'bi.*',
+            DB::raw('COALESCE(bp.executed_qty, 0) as executed_qty'),
+            DB::raw('(bi.quantity - COALESCE(bp.executed_qty, 0)) as balance_qty'),
+            DB::raw('(COALESCE(bp.executed_qty, 0) * bi.rate) as executed_amount'),
+            DB::raw('((bi.quantity - COALESCE(bp.executed_qty, 0)) * bi.rate) as balance_amount')
+        )
+        ->where('bi.boq_id', $id)
+        ->orderBy('bi.sn')
+        ->get();
 
-        return response()->json([
-            'status' => true,
-            'data' => $boq
-        ]); /// use composer json upload  package
-    }
+    return response()->json([
+        'status' => true,
+        'data' => [
+            'boq'   => $boq,
+            'items' => $items,
+            'files' => $boq->files
+        ]
+    ]);
+}
+
+
+
+public function getBoqById($id)
+{
+    return $this->show($id);
+}
+
+
 
     // 🔹 UPLOAD BOQ FILE
     public function uploadFile(Request $request, $boqId)
@@ -340,7 +370,8 @@ public function bulkUpdate(Request $request)
                 'new_quantity'=> $item['quantity'],
                 'old_rate'    => $boqItem->rate,
                 'new_rate'    => $item['rate'] ?? $boqItem->rate,
-                'changed_by'  => auth()->id(),
+                //'changed_by'  => auth()->id(), // change when project live
+                'changed_by'  => '1',
                 'change_reason' => 'Manual BOQ edit'
             ]);
 
@@ -358,32 +389,52 @@ public function bulkUpdate(Request $request)
     ]);
 }
 
-// 🔹 LIST ALL BOQs
-public function index(Request $request)
+/**** for dashboard usage */
+
+
+public function status($boq_id)
 {
-    $query = Boq::with([
-        'project:id,project_name',
-    ])->withCount('items');
+    // 1️⃣ Planned Quantity (BOQ)
+    $plannedQty = DB::table('boq_items')
+        ->where('boq_id', $boq_id)
+        ->sum('quantity');
 
-    // Optional filters
-    if ($request->project_id) {
-        $query->where('project_id', $request->project_id);
-    }
+    // 2️⃣ Ordered Quantity (PO)
+    $orderedQty = DB::table('purchase_order_items')
+        ->join('boq_items', 'boq_items.id', '=', 'purchase_order_items.boq_item_id')
+        ->where('boq_items.boq_id', $boq_id)
+        ->sum('purchase_order_items.ordered_qty');
 
-    if ($request->discipline) {
-        $query->where('discipline', $request->discipline);
-    }
+    // 3️⃣ Received Quantity (DC IN)
+    $receivedQty = DB::table('dc_in_items')
+        ->join('boq_items', 'boq_items.id', '=', 'dc_in_items.boq_item_id')
+        ->where('boq_items.boq_id', $boq_id)
+        ->sum('dc_in_items.supplied_qty');
 
-    if ($request->status) {
-        $query->where('status', $request->status);
-    }
+    // 4️⃣ Issued Quantity (DC OUT)
+    $issuedQty = DB::table('dc_out_items')
+        ->join('boq_items', 'boq_items.id', '=', 'dc_out_items.boq_item_id')
+        ->where('boq_items.boq_id', $boq_id)
+        ->sum('dc_out_items.issued_qty');
 
-    $boqs = $query->latest()->get();
+    // 5️⃣ Executed Quantity (Installation)
+    $executedQty = DB::table('installations')
+        ->where('boq_id', $boq_id)
+        ->sum('executed_qty');
 
     return response()->json([
-        'status' => true,
-        'data'   => $boqs
+        'boq_id'        => $boq_id,
+        'planned_qty'   => $plannedQty ?? 0,
+        'ordered_qty'   => $orderedQty ?? 0,
+        'received_qty'  => $receivedQty ?? 0,
+        'issued_qty'    => $issuedQty ?? 0,
+        'executed_qty'  => $executedQty ?? 0,
+        'balance_qty'   => ($plannedQty ?? 0) - ($executedQty ?? 0),
+        'stock_available' => ($receivedQty ?? 0) - ($issuedQty ?? 0),
     ]);
 }
+
+
+
 
 }

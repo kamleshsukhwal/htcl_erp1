@@ -36,7 +36,7 @@ use Illuminate\Http\Request;
 
     public function index()
     {
-        return Vendor::where('status',1)->get();
+        return Vendor::all();
     }
 
     public function update(Request $request, $id)

@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\DcOutController;
 use Illuminate\Support\Facades\Route;
+// BOQ, STOCK, PO dashboard summary
+use App\Http\Controllers\Api\DashboardController;
 
 // Project
 use App\Http\Controllers\Api\Project\ProjectController;
@@ -78,7 +81,7 @@ Route::prefix('vendors')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::prefix('purchase-orders')->group(function () {
- Route::get('/', [PurchaseOrderController::class, 'index']); 
+        Route::get('/', [PurchaseOrderController::class, 'index']); 
         Route::post('/', [PurchaseOrderController::class, 'store']); // Create PO
         Route::get('/{id}', [PurchaseOrderController::class, 'show']);
         Route::get('/project/{project_id}', [PurchaseOrderController::class, 'byProject']);
@@ -89,12 +92,28 @@ Route::prefix('vendors')->group(function () {
     | DC IN (SUPPLIED QTY)
     |--------------------------------------------------------------------------
     */
-    Route::prefix('dc-in')->middleware('permission:inventory.create')->group(function () {
+    Route::prefix('dc-in')->group(function () {
 
         Route::post('/', [DcInController::class, 'store']); // DC entry
+                Route::get('/', [DcInController::class, 'index']);
         Route::get('/{id}', [DcInController::class, 'show']);
+
         Route::get('/project/{project_id}', [DcInController::class, 'byProject']);
     });
+ /*
+    |--------------------------------------------------------------------------
+    | DC OUT (Received QTY)
+    |--------------------------------------------------------------------------
+    */
+
+
+
+    Route::prefix('dc-outs')->group(function () {
+    Route::post('/', [DcOutController::class, 'store']);
+    Route::get('/', [DcOutController::class, 'index']);
+    Route::get('/{id}', [DcOutController::class, 'show']);
+    Route::get('/items/{id}', [DcOutController::class, 'items']);
+});
 
     /*
     |--------------------------------------------------------------------------
@@ -106,5 +125,19 @@ Route::prefix('vendors')->group(function () {
         Route::post('/', [InstallationController::class, 'store']);
         Route::get('/project/{project_id}', [InstallationController::class, 'byProject']);
     });
+
+
+
+
+
+
+Route::prefix('dashboard')->group(function () {
+
+    Route::get('/boq-summary/{project_id}', [DashboardController::class, 'boqSummary']);
+    Route::get('/stock-summary/{project_id}', [DashboardController::class, 'stockSummary']);
+    Route::get('/po-summary/{project_id}', [DashboardController::class, 'poSummary']);
+
+});
+
 
 });
