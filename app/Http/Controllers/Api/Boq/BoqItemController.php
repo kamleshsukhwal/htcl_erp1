@@ -105,13 +105,11 @@ class BoqItemController extends Controller
         }
     }
 
-
-    
 public function historyByDate(Request $request)
 {
     $request->validate([
-        'from_date' => 'required|date',
-        'to_date'   => 'nullable|date|after_or_equal:from_date',
+        'from_date'   => 'required|date',
+        'to_date'     => 'nullable|date|after_or_equal:from_date',
         'boq_item_id' => 'nullable|exists:boq_items,id',
     ]);
 
@@ -119,22 +117,26 @@ public function historyByDate(Request $request)
 
     // 🔹 Optional filter by BOQ item
     if ($request->filled('boq_item_id')) {
-        $query->where('boq_item_id', $request->boq_item_id);
+        $query->where('boq_item_histories.boq_item_id', $request->boq_item_id);
     }
 
     // 🔹 Date filter
     if ($request->filled('to_date')) {
-        $query->whereBetween('created_at', [
+        $query->whereBetween('boq_item_histories.created_at', [
             $request->from_date,
             $request->to_date
         ]);
     } else {
-        $query->whereDate('created_at', $request->from_date);
+        $query->whereDate('boq_item_histories.created_at', $request->from_date);
     }
 
     $data = $query
-        ->orderBy('created_at', 'desc')
-        ->orderBy('created_at', 'desc')
+        ->leftJoin('boq_items', 'boq_items.id', '=', 'boq_item_histories.boq_item_id')
+        ->select(
+            'boq_item_histories.*',
+            'boq_items.item_name as item_name'
+        )
+        ->orderBy('boq_item_histories.created_at', 'desc')
         ->get();
 
     return response()->json([
