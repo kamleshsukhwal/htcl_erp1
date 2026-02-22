@@ -31,6 +31,7 @@ class ClientController extends Controller
             'name'  => 'required|string|max:255',
             'email' => 'nullable|email',
             'phone' => 'nullable|string|max:20',
+            'pancard_no' => 'nullable|string|max:20',
             'gst_no'=> 'nullable|string|max:50',
         ]);
 
@@ -39,6 +40,7 @@ class ClientController extends Controller
             'name'        => $request->name,
             'email'       => $request->email,
             'phone'       => $request->phone,
+             'pancard_no'       => $request->pancard_no,
             'gst_no'      => $request->gst_no,
             'status'      => 'active'
         ]);
@@ -63,11 +65,12 @@ class ClientController extends Controller
         $client = Client::findOrFail($id);
 
        $request->validate([
-    'name'  => 'sometimes|required|string|max:255',
-    'email' => 'sometimes|nullable|email',
-    'phone' => 'sometimes|nullable|string|max:20',
-    'gst_no'=> 'sometimes|nullable|string|max:50',
-    'status'=> 'sometimes|required|in:active,inactive'
+        'name'  => 'sometimes|required|string|max:255',
+        'email' => 'sometimes|nullable|email',
+        'phone' => 'sometimes|nullable|string|max:20',
+   'pancard_no' => 'sometimes|nullable|string|max:20',
+        'gst_no'=> 'sometimes|nullable|string|max:50',
+        'status'=> 'sometimes|required|in:active,inactive'
 ]);
 
         $client->update($request->all());

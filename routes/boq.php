@@ -33,6 +33,9 @@ Route::prefix('boq')
   
         Route::get('/{id}', [BoqController::class, 'show'])
             ->middleware('permission:boq.view');
+            
+        Route::get('/project/{project_id}', [BoqController::class, 'listByProject'])
+            ->middleware('permission:boq.view');
 
         Route::put('/{id}', [BoqController::class, 'update'])
             ->middleware('permission:boq.update');

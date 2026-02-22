@@ -389,6 +389,8 @@ public function bulkUpdate(Request $request)
     ]);
 }
 
+
+
 /**** for dashboard usage */
 
 
@@ -433,8 +435,5 @@ public function status($boq_id)
         'stock_available' => ($receivedQty ?? 0) - ($issuedQty ?? 0),
     ]);
 }
-
-
-
 
 }
