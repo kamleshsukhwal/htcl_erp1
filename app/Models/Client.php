@@ -14,6 +14,7 @@ class Client extends Model
         'name',
         'email',
         'phone',
+        'pancard_no',
         'gst_no',
         'status'
     ];

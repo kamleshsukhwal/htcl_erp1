@@ -32,7 +32,8 @@ use Illuminate\Support\Facades\DB;
             'items'         => 'required|array|min:1',
             'items.*.item_name'   => 'required|string',
             'items.*.ordered_qty'    => 'required|numeric',
-            'items.*.boq_item_id'=> 'required|numeric', /// used for boq_item_id  
+            'items.*.boq_id'=> 'required|numeric',
+            'items.*.boq_item_id'=> 'required|numeric', /// used for boq_item_id 
             'items.*.unit_price'  => 'required|numeric',
             'items.*.total'       => 'required|numeric',
         ]);
@@ -78,7 +79,7 @@ use Illuminate\Support\Facades\DB;
 
     public function show($id)
 {
-    $po = PurchaseOrder::with('items')->find($id);
+    $po = PurchaseOrder::with('items.boqItem')->find($id);
 
     if (!$po) {
         return response()->json([
@@ -105,5 +106,4 @@ public function approve($id)
 }
 
 }
-
 

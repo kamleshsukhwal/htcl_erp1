@@ -7,7 +7,27 @@
     use App\Http\Controllers\Api\AuthController;
     use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\ClientController;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
+
+use Illuminate\Support\Facades\Mail;
+
+Route::get('/clear-all', function() {
+    Artisan::call('route:clear');
+    Artisan::call('config:clear');
+    Artisan::call('cache:clear');
+    return "Cleared!";
+});
+
+
+Route::get('/test-mail', function () {
+    Mail::raw('Test mail from HTCL ERP', function ($message) {
+        $message->to('kamlesh@htcl.co.in')
+                ->subject('SMTP Test');
+    });
+
+    return 'Mail Sent!';
+});
 
     Route::prefix('admin')
         ->middleware(['auth:sanctum', 'role:admin'])
