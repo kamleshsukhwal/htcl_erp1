@@ -11,14 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('projects', function (Blueprint $table) {
-    $table->dropColumn([
-        'client_name',
-        'client_email',
-        'client_phone'
-    ]);
-});
-
+        Schema::table('employee_profiles', function (Blueprint $table) {
+            $table->dropColumn('Job_Title');
+        });
     }
 
     /**
@@ -26,8 +21,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('projects', function (Blueprint $table) {
+        Schema::table('employee_profiles', function (Blueprint $table) {
             //
+            $table->string('Job_Title');
         });
     }
 };
