@@ -13,7 +13,7 @@ class Employee_detail extends Model
 
     protected $fillable = [
         'employee_id',
-        'DOB',
+        'dob',
         'photo',
         'address',
         'bank_account_number',

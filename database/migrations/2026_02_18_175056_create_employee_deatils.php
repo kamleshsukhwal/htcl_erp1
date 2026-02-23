@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('employee_deatils', function (Blueprint $table) {
             $table->id();
             $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade');
-            $table->date('DOB');
+            $table->date('dob');
             $table->string('photo');
             $table->string('address');
             $table->string('bank_account_number');

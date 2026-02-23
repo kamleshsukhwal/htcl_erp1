@@ -15,7 +15,7 @@ class Employee extends Model
         'name',
         'gender',
         'email_id',
-        'Role'
+        'role'
     ];
 
     public function details()

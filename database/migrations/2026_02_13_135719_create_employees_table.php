@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('gender');
             $table->string('email_id')->unique();
-            $table->string('Role');
+            $table->string('role');
             $table->timestamps();
         });
     }

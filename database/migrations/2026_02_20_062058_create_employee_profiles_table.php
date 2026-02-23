@@ -14,14 +14,14 @@ return new class extends Migration
         Schema::create('employee_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade');
-            $table->string('Aadhar_Number',12)->unique();
-            $table->string('PAN_Number',10)->unique();
+            $table->string('aadhar_number',12)->unique();
+            $table->string('pan_number',10)->unique();
             // $table->string('Job_Title');
-            $table->enum('Employement_Type',['Full-Time','Part-Time','Contractor','Intern','Apprenticeship']);
-            $table->string('Degree_Name');
-            $table->string('College_Name');
-            $table->integer("Year_of_passing");
-            $table->integer('Experience');
+            $table->enum('employement_type',['Full-Time','Part-Time','Contractor','Intern','Apprenticeship']);
+            $table->string('degree_name');
+            $table->string('college_name');
+            $table->integer("year_of_passing");
+            $table->integer('experience');
             $table->timestamps();
         });
     }
