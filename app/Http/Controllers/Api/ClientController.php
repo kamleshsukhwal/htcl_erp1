@@ -36,14 +36,17 @@ class ClientController extends Controller
         ]);
 
         $client = Client::create([
-            'client_code' => 'CL-' . strtoupper(Str::random(6)),
-            'name'        => $request->name,
-            'email'       => $request->email,
-            'phone'       => $request->phone,
-             'pancard_no'       => $request->pancard_no,
-            'gst_no'      => $request->gst_no,
-            'status'      => 'active'
-        ]);
+    'client_code'     => $request->client_code,
+    'name'            => $request->name,
+    'email'           => $request->email,
+    'phone'           => $request->phone,
+    'contact_person'  => $request->contact_person,
+    'alternate_phone' => $request->alternate_phone,
+    'address'         => $request->address,
+    'pancard_no'      => $request->pancard_no,
+    'gst_no'          => $request->gst_no,
+    'status'          => $request->status ?? 'active'
+]);
 
         return response()->json([
             'message' => 'Client created successfully',
@@ -66,13 +69,23 @@ class ClientController extends Controller
 
        $request->validate([
         'name'  => 'sometimes|required|string|max:255',
+       // 'name'  => 'sometimes|required|string|max:255',
         'email' => 'sometimes|nullable|email',
         'phone' => 'sometimes|nullable|string|max:20',
-   'pancard_no' => 'sometimes|nullable|string|max:20',
+      
+        'contact_person'  => 'sometimes|required|string|max:100',
+        'alternate_phone'  => 'sometimes|required|string|max:255',
+        'address'  => 'sometimes|required|string|max:255',
+        'pancard_no' => 'sometimes|nullable|string|max:20',
         'gst_no'=> 'sometimes|nullable|string|max:50',
         'status'=> 'sometimes|required|in:active,inactive'
 ]);
-
+/****  'client_code',        'name',
+        'email',            'phone',
+        'company_name',    'contact_person',
+        'alternate_phone',        'address',
+        'pancard_no',        'gst_no',        'status'
+    ]; */
         $client->update($request->all());
 
         return response()->json([
