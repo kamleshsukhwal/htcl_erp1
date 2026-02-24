@@ -10,3 +10,4 @@ class Module extends Model
    // protected $fillable = ['name', 'is_enabled'];
       protected $fillable = ['name', 'is_enabled'];
 }
+ 
