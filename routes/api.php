@@ -11,32 +11,28 @@
     use Illuminate\Support\Facades\Route;
     use Illuminate\Support\Facades\Mail;
 
-    Route::get('/clear-all', function () {
-        Artisan::call('route:clear');
-        Artisan::call('config:clear');
-        Artisan::call('cache:clear');
-        return "Cleared!";
-    });
+ 
 
 
-    Route::get('/test-mail', function () {
-        Mail::raw('Test mail from HTCL ERP', function ($message) {
-            $message->to('kamlesh@htcl.co.in')
-                ->subject('SMTP Test');
-        });
-
-        return 'Mail Sent!';
-    });
+  
+  
 
     Route::prefix('admin')
         ->middleware(['auth:sanctum', 'role:admin'])
         ->group(function () {
+ 
 
             Route::get('/modules', [ModuleController::class, 'index']);
             Route::put('/modules/{id}', [ModuleController::class, 'update']);
             Route::post('/modules', [ModuleController::class, 'store']);
             Route::apiResource('/roles', RoleController::class);
 
+        
+        Route::get('/modules', [ModuleController::class, 'index']);
+        Route::put('/modules/{id}', [ModuleController::class, 'update']);
+        Route::post('/modules', [ModuleController::class, 'store']);
+        Route::apiResource('/roles', RoleController::class);
+ 
             Route::get('/modules', [ModuleController::class, 'index']);
             Route::put('/modules/{id}', [ModuleController::class, 'update']);
             Route::post('/modules', [ModuleController::class, 'store']);

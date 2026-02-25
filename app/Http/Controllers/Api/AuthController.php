@@ -23,9 +23,13 @@ class AuthController extends Controller
             'email'    => 'required|email',
             'password' => 'required'
         ]);
-
         $user = User::where('email', $request->email)->first();
-
+        if(!$user){
+            return response()->json([
+                'status'  => false,
+                'message' => 'User not found'
+            ], 404);
+        }
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'status'  => false,
