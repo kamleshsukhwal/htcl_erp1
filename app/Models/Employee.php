@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Employee_detail;
 use App\Models\Employee_profile;
-use App\Models\employee_document;
 class Employee extends Model
 {
     /** @use HasFactory<\Database\Factories\EmployeeFactory> */
@@ -27,10 +26,5 @@ class Employee extends Model
     public function profile()
     {
         return $this->hasOne(Employee_profile::class,'employee_id');
-    }
-
-    public function documents()
-    {
-        return $this->hasMany(employee_document::class,'employee_id');
     }
 }
