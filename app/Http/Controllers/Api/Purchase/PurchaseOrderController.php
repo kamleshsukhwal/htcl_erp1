@@ -75,7 +75,18 @@ use Illuminate\Support\Facades\DB;
             ], 500);
         }
     }
+/*** enatbel log store after remaining issue resolve 24-feb kamlesh 5:21PM */
 
+/*
+AuditLog::create([
+    'module_name' => 'purchase_orders',
+    'record_id' => $po->id,
+    'action' => 'update',
+    'old_data' => json_encode($oldData),
+    'new_data' => json_encode($po),
+    'performed_by' => auth()->id()
+]);
+*/
 
     public function show($id)
 {
