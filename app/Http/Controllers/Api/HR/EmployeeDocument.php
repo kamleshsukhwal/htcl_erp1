@@ -39,6 +39,7 @@ class EmployeeDocument extends Controller
             'documents.*' => 'file|mimes:pdf,jpeg,png,jpg,doc,docx|max:2048'
         ]);
 
+        
         $files = $request->file('documents');
 
         if (!$files) {

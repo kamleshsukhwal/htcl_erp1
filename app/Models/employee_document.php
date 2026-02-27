@@ -13,6 +13,7 @@ class employee_document extends Model
         'document_type',
         'uploaded_by',
     ];
+    
     public function employee()
     {
         return $this->belongsTo(Employee::class,'employee_id');

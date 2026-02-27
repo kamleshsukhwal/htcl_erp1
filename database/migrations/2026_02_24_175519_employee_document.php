@@ -21,6 +21,7 @@ return new class extends Migration
             'offer_letter','employment_contract','degree_certificate','bank_detail','tax_document','preformance_review','experience_letter']); // e.g., passport, ID card, etc.
             $table->foreignId('uploaded_by')->constrained('users');
             $table->timestamps();
+            
         });
     }
 

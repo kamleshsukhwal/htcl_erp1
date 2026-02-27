@@ -48,5 +48,6 @@ Route::prefix('hr/employee_documents')->group(function () {
     
     Route::put('/{employee_id}',[EmployeeDocument::class,'update'])->middleware('auth:sanctum');
     Route::delete('/{employee_id}',[EmployeeDocument::class,'destroy'])->middleware('auth:sanctum');
-    });
+
+});
 
