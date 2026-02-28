@@ -39,5 +39,12 @@ Route::prefix('hr/employee_profiles')->group(function () {
     Route::delete('/{employee_id}',[EmployeeProfile::class,'destroy'])->middleware('auth:sanctum');
 });
 
-
+Route::prefix('hr/employee_documents')->group(function () {
+    Route::post('/{employee_id}',[EmployeeDocument::class,'store'])->middleware('auth:sanctum');
+    
+    Route::get('/{employee_id}',[EmployeeDocument::class,'show'])->middleware('auth:sanctum');
+    
+    Route::put('/{employee_id}',[EmployeeDocument::class,'update'])->middleware('auth:sanctum');
+    Route::delete('/{employee_id}',[EmployeeDocument::class,'destroy'])->middleware('auth:sanctum');
+    });
 
