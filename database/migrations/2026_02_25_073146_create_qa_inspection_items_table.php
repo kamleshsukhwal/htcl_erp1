@@ -6,20 +6,34 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('qa_inspection_items', function (Blueprint $table) {
             $table->id();
+
+            // 🔗 Belongs to Inspection
+            $table->foreignId('inspection_id')
+                  ->constrained('qa_inspections')
+                  ->cascadeOnDelete();
+
+            // 🔗 Belongs to Checklist Item (Template Question)
+            $table->foreignId('checklist_item_id')
+                  ->constrained('qa_checklist_items')
+                  ->cascadeOnDelete();
+
+            // 📝 Result / Answer
+            $table->string('result');
+
+            // Optional remarks
+            $table->text('remarks')->nullable();
+
             $table->timestamps();
+
+            // Prevent duplicate answers for same question
+            $table->unique(['inspection_id', 'checklist_item_id']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('qa_inspection_items');

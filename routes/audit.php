@@ -50,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('checklists', QaChecklistController::class);
 
         // Checklist Items
+        
         Route::post('checklists/{checklist}/items', [QaChecklistController::class, 'addItem']);
         Route::put('checklist-items/{item}', [QaChecklistController::class, 'updateItem']);
         Route::delete('checklist-items/{item}', [QaChecklistController::class, 'deleteItem']);
