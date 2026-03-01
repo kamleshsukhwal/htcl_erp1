@@ -4,8 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\HR\EmployeeController;
 use App\Http\Controllers\Api\HR\EmployeeDetailController;
 use App\Http\Controllers\Api\HR\EmployeeProfile;
-use Symfony\Component\Routing\Router;
-
+use App\Http\Controllers\Api\HR\EmployeeDocumentController;
 Route::prefix('hr')->group(function () {
     Route::post('/', [EmployeeController::class, 'store'])->middleware('auth:sanctum');
 
@@ -39,4 +38,13 @@ Route::prefix('hr/employee_profiles')->group(function () {
     
     Route::delete('/{employee_id}',[EmployeeProfile::class,'destroy'])->middleware('auth:sanctum');
 });
+
+Route::prefix('hr/employee_documents')->group(function () {
+    Route::post('/{employee_id}',[EmployeeDocument::class,'store'])->middleware('auth:sanctum');
+    
+    Route::get('/{employee_id}',[EmployeeDocument::class,'show'])->middleware('auth:sanctum');
+    
+    Route::put('/{employee_id}',[EmployeeDocument::class,'update'])->middleware('auth:sanctum');
+    Route::delete('/{employee_id}',[EmployeeDocument::class,'destroy'])->middleware('auth:sanctum');
+    });
 
