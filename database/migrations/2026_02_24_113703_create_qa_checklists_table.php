@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::create('boqs', function (Blueprint $table) {
+        Schema::create('qa_checklists', function (Blueprint $table) {
     $table->id();
-    $table->unsignedBigInteger('project_id');
-    $table->string('boq_name');
-    $table->string('discipline');
-    $table->enum('status', ['draft','approved'])->default('draft');
-    $table->unsignedBigInteger('created_by');
+    //$table->unsignedBigInteger('inspection_id');
+    //$table->string('check_point');
+    $table->string('expected_value')->nullable();
+    $table->string('actual_value')->nullable();
+    $table->string('status')->default('pending'); // pass/fail
     $table->timestamps();
 });
     }
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('boqs');
+        Schema::dropIfExists('qa_checklists');
     }
 };

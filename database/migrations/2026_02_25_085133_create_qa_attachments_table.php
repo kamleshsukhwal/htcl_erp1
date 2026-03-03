@@ -11,14 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('projects', function (Blueprint $table) {
-    $table->dropColumn([
-        'client_name',
-        'client_email',
-        'client_phone'
-    ]);
+        Schema::create('qa_attachments', function (Blueprint $table) {
+    $table->id();
+    $table->string('module'); // ncr or inspection
+    $table->unsignedBigInteger('module_id');
+    $table->string('file_path');
+    $table->timestamps();
 });
-
     }
 
     /**
@@ -26,8 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('projects', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('qa_attachments');
     }
 };

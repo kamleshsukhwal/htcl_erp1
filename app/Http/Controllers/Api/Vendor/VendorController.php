@@ -15,14 +15,14 @@ use Illuminate\Http\Request;
         'name'    => 'required|string|max:255',
         'email'   => 'nullable|email|max:255',
         'address' => 'nullable|string|max:500',
-       'gst_no' => 'nullable|string|max:500',
+       'gst_number' => 'nullable|string|max:500',
     ]);
 
     // 2️⃣ Create vendor
     $vendor = Vendor::create([
         'name'    => $request->name,
         'email'   => $request->email,
-        'gst_no'  => $request->gst_no,
+        'gst_number'  => $request->gst_number,
         'address' => $request->address,
         'status'  => 'active', // default value if needed
     ]);
@@ -36,7 +36,10 @@ use Illuminate\Http\Request;
 
     public function index()
     {
-        return Vendor::all();
+        return response()->json([
+            'status' => true,
+            'data' => Vendor::latest()->paginate(10)
+        ]);
     }
 
     public function update(Request $request, $id)
