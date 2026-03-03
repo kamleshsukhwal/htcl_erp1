@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Quality\AuditLogController;
 use App\Http\Controllers\Api\Quality\NcrController;
 use App\Http\Controllers\Api\Quality\QaChecklistController;
 use App\Http\Controllers\Api\Quality\QaInspectionController;
+use App\Http\Controllers\Api\Quality\QaInspectionController as QualityQaInspectionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,7 +27,6 @@ Route::middleware('auth:sanctum')->group(function () {
         | INSPECTIONS
         |----------------------------------
         */
-
         Route::apiResource('inspections', QaInspectionController::class);
 
         // Inspection Lifecycle
@@ -37,9 +37,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // Inspection Items (Results)
         Route::post('inspections/{inspection}/items', [QaInspectionController::class, 'addResult']);
         Route::put('inspection-items/{item}', [QaInspectionController::class, 'updateResult']);
-
+        Route::get('inspections/{inspection}/items', [QaInspectionController::class, 'items']);
         // Inspection Attachment
         Route::post('inspections/{inspection}/upload', [QaInspectionController::class, 'upload']);
+
+
 
         /*
         |----------------------------------
@@ -47,7 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
         |----------------------------------
         */
 
-        Route::apiResource('checklists', QaChecklistController::class);
+    Route::apiResource('checklists', QaChecklistController::class);
 
         // Checklist Items
         
@@ -76,7 +78,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // NCR Upload
         Route::post('{ncr}/upload', [NcrController::class, 'upload']);
-
         // Filter by project
         Route::get('project/{project}', [NcrController::class, 'byProject']);
     });

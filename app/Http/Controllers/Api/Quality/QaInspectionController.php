@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\QaInspection;
 use Illuminate\Http\Request;
 use App\Models\QaInspectionItem;
+
+
 class QaInspectionController extends Controller
 {
     // ✅ CREATE
@@ -49,9 +51,74 @@ class QaInspectionController extends Controller
         ]);
     }
 
-    /*****  inspection item  */
+public function submit(QaInspection $inspection)
+{
+    if ($inspection->status !== 'draft') {
+        return response()->json(['message' => 'Only draft inspections can be submitted'], 400);
+    }
+
+    $inspection->update([
+        'status' => 'submitted'
+    ]);
+
+    return response()->json([
+        'message' => 'Inspection submitted successfully',
+        'data' => $inspection
+    ]);
+}
+
+/*** approval */
+
+public function approve(QaInspection $inspection)
+{
+    if ($inspection->status !== 'submitted') {
+        return response()->json(['message' => 'Only submitted inspections can be approved'], 400);
+    }
+
+    $inspection->update([
+        'status' => 'approved'
+    ]);
+
+    return response()->json([
+        'message' => 'Inspection approved',
+        'data' => $inspection
+    ]);
+}
+
+/** Reject**/
+
+public function reject(Request $request, QaInspection $inspection)
+{
+    $inspection->update([
+        'status' => 'rejected',
+        'remarks' => $request->remarks
+    ]);
+
+    return response()->json([
+        'message' => 'Inspection rejected',
+        'data' => $inspection
+    ]);
+}
 
 
+public function updateResult(Request $request, QaInspectionItem $item)
+{
+    $validated = $request->validate([
+        'result' => 'required|string|max:255',
+        'remarks' => 'nullable|string'
+    ]);
+
+    $item->update($validated);
+
+    return response()->json([
+        'message' => 'Inspection item updated',
+        'data' => $item
+    ]);
+}
+
+ 
+    /*****  inspection item  */  
+    
 public function addResult(Request $request, QaInspection $inspection)
 {
     $validated = $request->validate([
@@ -81,5 +148,13 @@ public function addResult(Request $request, QaInspection $inspection)
         'message' => 'Inspection result added successfully',
         'data' => $item
     ], 201);
+}
+
+
+public function items(QaInspection $inspection)
+{
+    return response()->json([
+        'data' => $inspection->items()->with('checklistItem')->get()
+    ]);
 }
 }
