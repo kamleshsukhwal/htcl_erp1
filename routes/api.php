@@ -1,77 +1,80 @@
-    <?php
+<?php
 
-    use App\Http\Controllers\Api\Admin\DashboardController;
-    use App\Http\Controllers\Api\Admin\ModuleController;
-    use App\Http\Controllers\Api\Admin\PermissionController;
-    use App\Http\Controllers\Api\Admin\RoleController;
-    use App\Http\Controllers\Api\AuthController;
-    use App\Http\Controllers\Api\Admin\UserController;
+use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\Admin\ModuleController;
+use App\Http\Controllers\Api\Admin\PermissionController;
+use App\Http\Controllers\Api\Admin\RoleController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\ClientController;
+use App\Http\Controllers\Api\RatingController;
+use App\Http\Controllers\Api\FeedbackController;
+
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
-
 use Illuminate\Support\Facades\Mail;
 
-Route::get('/clear-all', function() {
+Route::get('/clear-all', function () {
     Artisan::call('route:clear');
     Artisan::call('config:clear');
     Artisan::call('cache:clear');
     return "Cleared!";
 });
 
-
 Route::get('/test-mail', function () {
     Mail::raw('Test mail from HTCL ERP', function ($message) {
         $message->to('kamlesh@htcl.co.in')
-                ->subject('SMTP Test');
+            ->subject('SMTP Test');
     });
 
     return 'Mail Sent!';
 });
 
-    Route::prefix('admin')
-        ->middleware(['auth:sanctum', 'role:admin'])
-        ->group(function () {
+Route::prefix('admin')
+    ->middleware(['auth:sanctum', 'role:admin'])
+    ->group(function () {
 
         Route::get('/modules', [ModuleController::class, 'index']);
         Route::put('/modules/{id}', [ModuleController::class, 'update']);
         Route::post('/modules', [ModuleController::class, 'store']);
-        Route::apiResource('/roles', RoleController::class);
 
-            Route::get('/modules', [ModuleController::class, 'index']);
-            Route::put('/modules/{id}', [ModuleController::class, 'update']);
-            Route::post('/modules', [ModuleController::class, 'store']);
-            Route::apiResource('/roles', RoleController::class);
-            Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions']);
-   
-   
-            });
+        Route::apiResource('/roles', RoleController::class);
+        Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions']);
+    });
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('clients', ClientController::class);
 });
 
-    Route::apiResource('/permissions', PermissionController::class)
-        ->only(['index', 'store']);
-    Route::get('/users', [UserController::class, 'index']);
-    Route::post('/users', [UserController::class, 'store']);
-    Route::post('/users/{id}/roles', [UserController::class, 'assignRole']);
 
+Route::apiResource('/permissions', PermissionController::class)
+    ->only(['index', 'store']);
 
-    /*** here new route will come */
-    Route::post('/login', [AuthController::class, 'login'])->name('api.login');
+Route::get('/users', [UserController::class, 'index']);
+Route::post('/users', [UserController::class, 'store']);
+Route::post('/users/{id}/roles', [UserController::class, 'assignRole']);
 
-    Route::middleware('auth:sanctum')->group(function () {
+Route::post('/login', [AuthController::class, 'login'])->name('api.login');
 
-        Route::get('/profile', [AuthController::class, 'profile']);
-        Route::post('/logout', [AuthController::class, 'logout']);
+Route::middleware('auth:sanctum')->group(function () {
 
-        Route::get('/users', [UserController::class, 'index'])
-            ->middleware('permission:user.view');
+    Route::get('/profile', [AuthController::class, 'profile']);
+    Route::post('/logout', [AuthController::class, 'logout']);
 
-        // MODULE ROUTES
-        require __DIR__.'/hr.php';
-        require __DIR__.'/finance.php';
-        require __DIR__.'/project.php';
-        require __DIR__.'/boq.php';
-    });
+    Route::get('/users', [UserController::class, 'index'])
+        ->middleware('permission:user.view');
+
+    Route::post('/ratings', [RatingController::class, 'store']);
+    Route::get('/ratings', [RatingController::class, 'index']);
+    Route::get('/ratings/employee/{id}', [RatingController::class, 'getByEmployee']);
+    Route::get('/ratings/average', [RatingController::class, 'average']);
+
+    Route::post('/feedback', [FeedbackController::class, 'store']);
+    Route::get('/feedback', [FeedbackController::class, 'index']);
+    Route::get('/feedback/filter', [FeedbackController::class, 'filterByDate']);
+
+    require __DIR__.'/hr.php';
+    require __DIR__.'/finance.php';
+    require __DIR__.'/project.php';
+    require __DIR__.'/boq.php';
+});

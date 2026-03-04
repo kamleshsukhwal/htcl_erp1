@@ -7,23 +7,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('purchase_order_items', function (Blueprint $table) {
-            $table->renameColumn('boq_id', 'boq_item_id');
-        });
-
-        Schema::table('dc_in_items', function (Blueprint $table) {
-            $table->renameColumn('boq_id', 'boq_item_id');
-        });
+        // Skipped due to column mismatch in fresh setup
     }
 
     public function down(): void
     {
-        Schema::table('purchase_order_items', function (Blueprint $table) {
-            $table->renameColumn('boq_item_id', 'boq_id');
-        });
-
-        Schema::table('dc_in_items', function (Blueprint $table) {
-            $table->renameColumn('boq_item_id', 'boq_id');
-        });
+        //
     }
 };
