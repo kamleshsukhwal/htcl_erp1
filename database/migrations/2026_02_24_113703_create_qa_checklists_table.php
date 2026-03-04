@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('qa_checklists', function (Blueprint $table) {
     $table->id();
-    $table->unsignedBigInteger('inspection_id');
-    $table->string('check_point');
+    //$table->unsignedBigInteger('inspection_id');
+    //$table->string('check_point');
     $table->string('expected_value')->nullable();
     $table->string('actual_value')->nullable();
     $table->string('status')->default('pending'); // pass/fail

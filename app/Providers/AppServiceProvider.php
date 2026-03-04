@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Ncr;
+use App\Observers\NcrObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -16,7 +18,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+      Ncr::observe(NcrObserver::class);
     }
 
     /**

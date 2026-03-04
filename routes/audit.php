@@ -1,33 +1,99 @@
 <?php
 
-use App\Http\Controllers\Api\Quality\AuditLogController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\Quality\AuditLogController;
 use App\Http\Controllers\Api\Quality\NcrController;
 use App\Http\Controllers\Api\Quality\QaChecklistController;
 use App\Http\Controllers\Api\Quality\QaInspectionController;
+use App\Http\Controllers\Api\Quality\QaInspectionController as QualityQaInspectionController;
 
-Route::prefix('qa')->group(function () {
+/*
+|--------------------------------------------------------------------------
+| QA MANAGEMENT MODULE (Professional Structure)
+|--------------------------------------------------------------------------
+*/
 
-    Route::post('/inspection', [QaInspectionController::class, 'store']);
-    Route::get('/inspection/{id}', [QaInspectionController::class, 'show']);
-    Route::post('/checklist', [QaChecklistController::class, 'store']);
-    Route::post('/inspection/{id}/submit', [QaInspectionController::class, 'submit']);
-    Route::post('/inspection/{id}/approve', [QaInspectionController::class, 'approve']);
-    Route::post('/inspection/{id}/reject', [QaInspectionController::class, 'reject']);
-    Route::get('/inspection', [QaInspectionController::class, 'index']);
-});
+Route::middleware('auth:sanctum')->group(function () {
 
-Route::prefix('ncr')->group(function () {
-    Route::post('/', [NcrController::class, 'store']);
-    Route::get('/project/{project_id}', [NcrController::class, 'byProject']);
-    Route::patch('/{id}/assign', [NcrController::class, 'assign']);
-    Route::patch('/{id}/in-progress', [NcrController::class, 'markInProgress']);
-    Route::patch('/{id}/corrected', [NcrController::class, 'markCorrected']);
-    Route::patch('/{id}/close', [NcrController::class, 'close']);
-    Route::get('/', [NcrController::class, 'index']);
-    Route::get('/{id}', [NcrController::class, 'show']);
-});
+    /*
+    |--------------------------------------------------------------------------
+    | QA MODULE
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('qa')->group(function () {
 
-Route::prefix('audit')->group(function () {
-    Route::get('/module/{module}', [AuditLogController::class, 'byModule']);
+        /*
+        |----------------------------------
+        | INSPECTIONS
+        |----------------------------------
+        */
+        Route::apiResource('inspections', QaInspectionController::class);
+
+        // Inspection Lifecycle
+        Route::post('inspections/{inspection}/submit', [QaInspectionController::class, 'submit']);
+        Route::post('inspections/{inspection}/approve', [QaInspectionController::class, 'approve']);
+        Route::post('inspections/{inspection}/reject', [QaInspectionController::class, 'reject']);
+
+        // Inspection Items (Results)
+        Route::post('inspections/{inspection}/items', [QaInspectionController::class, 'addResult']);
+        Route::put('inspection-items/{item}', [QaInspectionController::class, 'updateResult']);
+        Route::get('inspections/{inspection}/items', [QaInspectionController::class, 'items']);
+        // Inspection Attachment
+        Route::post('inspections/{inspection}/upload', [QaInspectionController::class, 'upload']);
+
+
+
+        /*
+        |----------------------------------
+        | CHECKLISTS
+        |----------------------------------
+        */
+
+    Route::apiResource('checklists', QaChecklistController::class);
+
+        // Checklist Items
+        
+        Route::post('checklists/{checklist}/items', [QaChecklistController::class, 'addItem']);
+        Route::put('checklist-items/{item}', [QaChecklistController::class, 'updateItem']);
+        Route::delete('checklist-items/{item}', [QaChecklistController::class, 'deleteItem']);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | NCR MODULE
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('ncr')->group(function () {
+
+        Route::apiResource('/', NcrController::class)->parameters([
+            '' => 'ncr'
+        ]);
+
+        // NCR Lifecycle
+        Route::patch('{ncr}/assign', [NcrController::class, 'assign']);
+        Route::patch('{ncr}/in-progress', [NcrController::class, 'markInProgress']);
+        Route::patch('{ncr}/corrected', [NcrController::class, 'markCorrected']);
+        Route::patch('{ncr}/close', [NcrController::class, 'close']);
+
+        // NCR Upload
+        Route::post('{ncr}/upload', [NcrController::class, 'upload']);
+        // Filter by project
+        Route::get('project/{project}', [NcrController::class, 'byProject']);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | AUDIT MODULE
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('audit')->group(function () {
+
+        Route::get('module/{module}', [AuditLogController::class, 'byModule']);
+        Route::get('project/{project}', [AuditLogController::class, 'byProject']);
+        Route::get('user/{user}', [AuditLogController::class, 'byUser']);
+        
+    });
+
 });

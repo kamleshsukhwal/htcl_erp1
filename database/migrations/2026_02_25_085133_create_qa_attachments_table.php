@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('employee_profiles', function (Blueprint $table) {
-            $table->dropColumn('Job_Title');
-        });
+        Schema::create('qa_attachments', function (Blueprint $table) {
+    $table->id();
+    $table->string('module'); // ncr or inspection
+    $table->unsignedBigInteger('module_id');
+    $table->string('file_path');
+    $table->timestamps();
+});
     }
 
     /**
@@ -21,9 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('employee_profiles', function (Blueprint $table) {
-            //
-            $table->string('Job_Title');
-        });
+        Schema::dropIfExists('qa_attachments');
     }
 };
