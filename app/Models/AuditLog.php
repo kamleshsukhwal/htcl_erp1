@@ -7,14 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class AuditLog extends Model
 {
+ 
     protected $fillable = [
-        'module',
-        'module_id',
+        'module_name',
+        'record_id',
         'action',
         'old_data',
         'new_data',
-        'user_id'
+        'performed_by'
     ];
+
 
     protected $casts = [
         'old_data' => 'array',
