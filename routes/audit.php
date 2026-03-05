@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Quality\NcrController;
 use App\Http\Controllers\Api\Quality\QaChecklistController;
 use App\Http\Controllers\Api\Quality\QaInspectionController;
 use App\Http\Controllers\Api\Quality\QaInspectionController as QualityQaInspectionController;
+use App\Http\Controllers\Api\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -71,6 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ]);
 
         // NCR Lifecycle
+        
         Route::patch('{ncr}/assign', [NcrController::class, 'assign']);
         Route::patch('{ncr}/in-progress', [NcrController::class, 'markInProgress']);
         Route::patch('{ncr}/corrected', [NcrController::class, 'markCorrected']);
@@ -95,5 +97,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('user/{user}', [AuditLogController::class, 'byUser']);
         
     });
+    Route::get('/users', [UserController::class,'index']);
 
 });

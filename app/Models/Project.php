@@ -9,6 +9,7 @@ class Project extends Model
     protected $fillable = [
         'project_code',
         'project_name',
+        'client_id',
         'client_name',
         'client_email',
         'client_phone',
@@ -43,5 +44,10 @@ class Project extends Model
     public function manager()
     {
         return $this->belongsTo(User::class, 'project_manager_id');
+    }
+    
+     public function ncrs()
+    {
+        return $this->hasMany(Ncr::class);
     }
 }

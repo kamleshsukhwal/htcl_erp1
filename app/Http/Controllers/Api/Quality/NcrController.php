@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api\Quality;
 use App\Http\Controllers\Controller;
 use App\Models\Ncr;
 use App\Models\QaAttachment;
+use App\Models\Project;
+use App\Models\BoqItem;
+use App\Models\UserController;
 use Illuminate\Http\Request;
 
 class NcrController extends Controller
@@ -49,7 +52,8 @@ public function update(Request $request, Ncr $ncr)
         'issue_description' => 'sometimes|string',
         'severity' => 'sometimes|in:low,medium,high',
         'due_date' => 'nullable|date',
-        'boq_item_id' => 'nullable|integer'
+        'boq_item_id' => 'nullable|integer',
+        'corrective_action' => 'sometimes|string'
     ]);
 
     $ncr->update($validated);
@@ -67,7 +71,7 @@ public function update(Request $request, Ncr $ncr)
     public function index()
     {
         return response()->json([
-            'data' => Ncr::latest()->paginate(10)
+            'data' => Ncr::with(['project','boqItem'])->paginate(10)
         ]);
     }
 
@@ -77,7 +81,7 @@ public function update(Request $request, Ncr $ncr)
     public function show(Ncr $ncr)
     {
         return response()->json([
-            'data' => $ncr
+            'data' => $ncr->load(['project','boqItem','assignedUser'])
         ]);
     }
 
@@ -166,5 +170,21 @@ public function update(Request $request, Ncr $ncr)
         return response()->json([
             'data' => $ncrs
         ]);
+    }
+    // Deletign for ncr
+    public function destroy($id){
+        $ncr = NCR::find($id);
+        
+        if (!$ncr) {
+        return response()->json([
+            'message' => 'NCR not found'
+        ], 404);
+    }
+
+    $ncr->delete();
+
+    return response()->json([
+        'message' => 'NCR deleted successfully'
+    ]);
     }
 }
