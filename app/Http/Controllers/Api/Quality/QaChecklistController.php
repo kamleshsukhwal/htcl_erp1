@@ -56,4 +56,22 @@ public function addItem(Request $request, QaChecklist $checklist)
         'data'    => $item
     ], 201);
 }
+public function destroy($id)
+{
+    try {
+        $checklist = QaChecklist::findOrFail($id);
+
+        $checklist->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Checklist deleted successfully'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Failed to delete checklist'
+        ], 500);
+    }
+}
 }

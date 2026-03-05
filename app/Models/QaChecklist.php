@@ -9,6 +9,7 @@ class QaChecklist extends Model
     protected $fillable = [
        // 'inspection_id',
        // 'check_point',
+       'name',
         'expected_value',
         'actual_value',
         'status'
