@@ -8,6 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
+<<<<<<< HEAD
+        // Skipped duplicate column issue
+=======
         Schema::table('clients', function (Blueprint $table) {
 
           //  $table->string('client_code', 50)->unique()->nullable()->after('id');
@@ -20,22 +23,11 @@ return new class extends Migration
             //$table->string('alternate_phone', 20)->nullable();
           //  $table->text('address')->nullable();
         });
+>>>>>>> 9fc7058ba548e5b0b43249e0f346817bf1d732ce
     }
 
     public function down(): void
     {
-        Schema::table('clients', function (Blueprint $table) {
-
-            $table->dropColumn([
-                //'client_code',
-              // 'name',
-              //  'company_name',
-              //  'contact_person',
-                'email',
-                'phone',
-                'alternate_phone',
-              //  'address'
-            ]);
-        });
+        //
     }
 };

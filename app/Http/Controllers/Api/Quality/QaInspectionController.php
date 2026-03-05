@@ -275,7 +275,17 @@ $this->logAudit(
         ]);
     }
 
+  
+    public function destroy($id)
+    {
+        $inspection = QaInspection::findOrFail($id);
+        $inspection->delete();
 
+        return response()->json([
+            'message' => 'Inspection deleted successfully'
+        ]);
+        
+    }
 
     /***** Store audit Log */
 
