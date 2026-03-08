@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\Inventory\DcInController;
 
 // Execution
 use App\Http\Controllers\Api\Execution\InstallationController;
+use App\Http\Controllers\Api\Project\ProjectAttachmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,6 +59,21 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         Route::get('/{id}/boq-graph', [ProjectDashboardController::class, 'boqWiseValue'])
             ->middleware('permission:project.view');
+
+
+
+
+/**** attachment */
+ 
+
+    Route::post('{project_id}/upload-file',[ProjectAttachmentController::class,'upload']);
+    Route::get('{project_id}/files',[ProjectAttachmentController::class,'list']);
+
+    Route::get('download-file/{id}',[ProjectAttachmentController::class,'download']);
+
+    Route::delete('delete-file/{id}',[ProjectAttachmentController::class,'delete']);
+
+ 
     });
 
     /*
