@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Quality\QaChecklistController;
 use App\Http\Controllers\Api\Quality\QaInspectionController;
 use App\Http\Controllers\Api\Quality\QaInspectionController as QualityQaInspectionController;
 use App\Http\Controllers\Api\UserController;
+use Illuminate\Support\LazyCollection;
 
 /*
 |--------------------------------------------------------------------------
@@ -99,4 +100,19 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::get('/users', [UserController::class,'index']);
 
-});
+}); 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -4,33 +4,45 @@ namespace App\Http\Controllers\Api\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Vendor;
+use App\Models\VendorAttachment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
   class VendorController extends Controller
 {
-    public function store(Request $request)
+  
+public function store(Request $request)
 {
     // 1️⃣ Validate
-    $request->validate([
-        'name'    => 'required|string|max:255',
-        'email'   => 'nullable|email|max:255',
-        'address' => 'nullable|string|max:500',
-       'gst_number' => 'nullable|string|max:500',
-    ]);
+   // dd($request);
+   //dd($request->all());
+   $request->validate([
+    'name' => 'required|string|max:255',
+    'email' => 'nullable|email|max:255',
+    'gst_number' => 'nullable|string|max:255',
+    'vendor_code' => 'nullable|string|max:100',
+    'address' => 'nullable|string|max:500',
+    'pancard' => 'nullable|string|max:50'
+    
+]);
 
-    // 2️⃣ Create vendor
+    // 2️⃣ Create Vendor
     $vendor = Vendor::create([
-        'name'    => $request->name,
-        'email'   => $request->email,
-        'gst_number'  => $request->gst_number,
+        'name' => $request->name,
+        'email' => $request->email,
+        'gst_number' => $request->gst_number,
+        'vendor_code' => $request->vendor_code,
         'address' => $request->address,
-        'status'  => 'active', // default value if needed
+        'pancard' => $request->pancard,
+        'status' => 'active'
     ]);
 
-    // 3️⃣ Return structured response
+    // 3️⃣ Upload Attachments
+     
     return response()->json([
+        'status' => true,
         'message' => 'Vendor added successfully',
-        'data'    => $vendor
+        'data' => $vendor
     ], 201);
 }
 
@@ -42,7 +54,7 @@ use Illuminate\Http\Request;
         ]);
     }
 
-    public function update(Request $request, $id)
+  public function update(Request $request, $id)
 {
     $vendor = \App\Models\Vendor::find($id);
 
@@ -53,14 +65,31 @@ use Illuminate\Http\Request;
         ], 404);
     }
 
+    // Validate
     $request->validate([
-        'name' => 'sometimes|required|string',
-        'email' => 'sometimes|required|email|unique:vendors,email,' . $id,
-        'address' => 'nullable|string',
-        'status' => 'sometimes|required|integer'
+        'name' => 'sometimes|required|string|max:255',
+        'email' => 'sometimes|nullable|email|max:255',
+        'gst_number' => 'nullable|string|max:255',
+        'vendor_code' => 'nullable|string|max:100',
+        'address' => 'nullable|string|max:500',
+        'pancard' => 'nullable|string|max:50',
+        'status' => 'nullable|string',
+        'attachments.*' => 'nullable|file|max:20048'
     ]);
 
-    $vendor->update($request->all());
+    // Update Vendor
+    $vendor->update([
+        'name' => $request->name ?? $vendor->name,
+        'email' => $request->email ?? $vendor->email,
+        'gst_number' => $request->gst_number ?? $vendor->gst_number,
+        'vendor_code' => $request->vendr_code ?? $vendor->vendr_code,
+        'address' => $request->address ?? $vendor->address,
+        'pancard' => $request->pancard ?? $vendor->pancard,
+        'status' => $request->status ?? $vendor->status
+    ]);
+
+    // Upload new documents if provided
+     
 
     return response()->json([
         'status' => true,
@@ -108,5 +137,117 @@ public function destroy($id)
 }
 
 
+/***** upload document */
+public function uploadDocument(Request $request, $vendorId)
+{
+    $request->validate([
+        'file' => 'required|file|max:5120'
+    ]);
+
+    $vendor = Vendor::find($vendorId);
+
+    if (!$vendor) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Vendor not found'
+        ], 404);
+    }
+
+    $file = $request->file('file');
+
+    $fileName = uniqid().'_'.$file->getClientOriginalName();
+
+    // store in storage/app/private/vendors
+    $file->storeAs('private/vendors', $fileName);
+
+    $attachment = VendorAttachment::create([
+        'vendor_id' => $vendorId,
+        'file_name' => $fileName,
+        'original_name' => $file->getClientOriginalName(),
+        'file_path' => 'vendors/'.$fileName,
+        'mime_type' => $file->getMimeType(),
+        'file_size' => $file->getSize()
+    ]);
+
+    return response()->json([
+        'status' => true,
+        'message' => 'File uploaded successfully',
+        'data' => $attachment
+    ]);
 }
 
+/**** fetch all document related to vendor id */
+
+public function getVendorDocuments($vendorId)
+{
+    $vendor = Vendor::with('attachments')->find($vendorId);
+
+    if (!$vendor) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Vendor not found'
+        ], 404);
+    }
+
+    return response()->json([
+        'status' => true,
+        'vendor_id' => $vendor->id,
+        'documents' => $vendor->attachments
+    ]);
+}
+
+
+/**** download document */
+
+ 
+public function downloadDocument($id)
+{
+    $attachment = VendorAttachment::find($id);
+
+    if (!$attachment) {
+        return response()->json([
+            'status' => false,
+            'message' => 'File not found'
+        ], 404);
+    }
+
+    $path = 'private/'.$attachment->file_path;
+
+    if (!Storage::exists($path)) {
+        return response()->json([
+            'status' => false,
+            'message' => 'File missing on server'
+        ], 404);
+    }
+
+    return Storage::download($path, $attachment->original_name);
+}
+
+
+/*** delete attachement */
+
+public function deleteDocument($id)
+{
+    $attachment = VendorAttachment::find($id);
+
+    if (!$attachment) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Document not found'
+        ], 404);
+    }
+
+    $path = 'private/'.$attachment->file_path;
+
+    if (Storage::exists($path)) {
+        Storage::delete($path);
+    }
+
+    $attachment->delete();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Document deleted successfully'
+    ]);
+}
+}
