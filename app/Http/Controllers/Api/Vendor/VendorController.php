@@ -141,7 +141,7 @@ public function destroy($id)
 public function uploadDocument(Request $request, $vendorId)
 {
     $request->validate([
-        'file' => 'required|file|max:5120'
+        'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120'
     ]);
 
     $vendor = Vendor::find($vendorId);
@@ -158,7 +158,7 @@ public function uploadDocument(Request $request, $vendorId)
     $fileName = uniqid().'_'.$file->getClientOriginalName();
 
     // store in storage/app/private/vendors
-    $file->storeAs('private/vendors', $fileName);
+    $file->storeAs('vendors', $fileName,'local');
 
     $attachment = VendorAttachment::create([
         'vendor_id' => $vendorId,
@@ -211,16 +211,16 @@ public function downloadDocument($id)
         ], 404);
     }
 
-    $path = 'private/'.$attachment->file_path;
+    $path = $attachment->file_path;
 
-    if (!Storage::exists($path)) {
+    if (!Storage::disk('local')->exists($path)) {
         return response()->json([
             'status' => false,
             'message' => 'File missing on server'
         ], 404);
     }
 
-    return Storage::download($path, $attachment->original_name);
+    return Storage::disk('local')->download($path, $attachment->original_name);
 }
 
 
@@ -237,10 +237,10 @@ public function deleteDocument($id)
         ], 404);
     }
 
-    $path = 'private/'.$attachment->file_path;
+    $path = $attachment->file_path;
 
-    if (Storage::exists($path)) {
-        Storage::delete($path);
+    if (Storage::disk('local')->exists($path)) {
+        Storage::disk('local')->delete($path);
     }
 
     $attachment->delete();
