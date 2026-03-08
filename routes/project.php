@@ -67,7 +67,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     */
    // Route::prefix('vendors')->middleware('permission:vendor.manage')->group(function () {
 Route::prefix('vendors')->group(function () {
-
+Route::post('/{id}/documents', [VendorController::class, 'uploadDocument']);
+Route::get('/{id}/documents', [VendorController::class, 'getVendorDocuments']);
+Route::delete('/document/{id}', [VendorController::class,'deleteDocument']);
+Route::get('/document/download/{id}', [VendorController::class, 'downloadDocument']);
         Route::post('/', [VendorController::class, 'store']);   // Create vendor
         Route::get('/', [VendorController::class, 'index']);    // List vendors
         Route::get('/{id}', [VendorController::class, 'show']); // View vendor

@@ -13,6 +13,18 @@ class Vendor extends Model
         'name',
         'email',
         'address',
-        'status' // if you have it in DB
+        'status', // if you have it in DB
+        'mobile',
+        'gst_number',
+        'vendor_code',
+        'pancard'
+     
     ];
+
+    public function attachments()
+{
+    return $this->hasMany(VendorAttachment::class);
+}
+
+
 }

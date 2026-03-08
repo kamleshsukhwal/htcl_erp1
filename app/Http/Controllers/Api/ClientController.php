@@ -33,6 +33,7 @@ class ClientController extends Controller
             'phone' => 'nullable|string|max:20',
             'pancard_no' => 'nullable|string|max:20',
             'gst_no'=> 'nullable|string|max:50',
+            'in_site_location'=>'nullable|string|max:160'
         ]);
 
         $client = Client::create([
@@ -45,6 +46,7 @@ class ClientController extends Controller
     'address'         => $request->address,
     'pancard_no'      => $request->pancard_no,
     'gst_no'          => $request->gst_no,
+    'in_site_location'=>$request->in_site_location,
     'status'          => $request->status ?? 'active'
 ]);
 
@@ -72,7 +74,7 @@ class ClientController extends Controller
        // 'name'  => 'sometimes|required|string|max:255',
         'email' => 'sometimes|nullable|email',
         'phone' => 'sometimes|nullable|string|max:20',
-      
+      'in_site_location'=>'sometime|nullable|string',
         'contact_person'  => 'sometimes|required|string|max:100',
         'alternate_phone'  => 'sometimes|required|string|max:255',
         'address'  => 'sometimes|required|string|max:255',
