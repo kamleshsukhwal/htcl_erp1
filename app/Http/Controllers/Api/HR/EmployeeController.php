@@ -33,13 +33,13 @@ class EmployeeController extends Controller
             'name' => 'required|string',
             'gender' => 'required|string',
             'email_id' => 'required|email|unique:employees,email_id',
-            'Role' => 'required|string'
+            'role' => 'required|string'
         ]);
         $employee = Employee::create([
             'name' => $request->name,
             'gender' => $request->gender,
             'email_id' => $request->email_id,
-            'Role' => $request->Role
+            'role' => $request->role
         ]);
         if ($employee) {
             $response = [

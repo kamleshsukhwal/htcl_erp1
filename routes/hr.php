@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\HR\EmployeeDetailController;
 use App\Http\Controllers\Api\HR\EmployeeProfile;
 // use App\Http\Controllers\Api\HR\EmployeeDocumentController;
 use App\Http\Controllers\Api\HR\EmployeeDocument;
+use App\Http\Controllers\Api\HR\AttendenceController;
 
 // use App\Models\Employee_document;
 
@@ -52,3 +53,11 @@ Route::prefix('hr/employee_documents')->group(function () {
     Route::delete('/{employee_id}',[EmployeeDocument::class,'destroy'])->middleware('auth:sanctum');
 });
 
+Route::prefix('hr/Attendence/')->group(function(){
+    Route::post('/check_in/{employee_id}',[AttendenceController::class,'check_in'])->middleware('auth:sanctum');
+
+    Route::post('/check_out/{employee_id}',[AttendenceController::class,'check_out'])->middleware('auth:sanctum');
+
+    Route::get('/present',[AttendenceController::class,'index'])->middleware('auth:sanctum');
+
+});
