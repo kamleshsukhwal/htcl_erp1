@@ -83,7 +83,8 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('permission:user.view');
     Route::post('/users', [UserController::class, 'store']);
     Route::post('/users/{id}/roles', [UserController::class, 'assignRole']);
-
+Route::get('/check-session', [AuthController::class, 'checkSession'])
+    ->middleware('auth:sanctum');
     /*
     |--------------------------------------------------------------------------
     | Rating APIs

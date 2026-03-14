@@ -8,16 +8,12 @@ use App\Http\Controllers\Api\DashboardController;
 // Project
 use App\Http\Controllers\Api\Project\ProjectController;
 use App\Http\Controllers\Api\Project\ProjectDashboardController;
-
 // Vendor
 use App\Http\Controllers\Api\Vendor\VendorController;
-
 // Purchase
 use App\Http\Controllers\Api\Purchase\PurchaseOrderController;
-
 // Inventory
 use App\Http\Controllers\Api\Inventory\DcInController;
-
 // Execution
 use App\Http\Controllers\Api\Execution\InstallationController;
 use App\Http\Controllers\Api\Project\ProjectAttachmentController;
@@ -60,20 +56,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/{id}/boq-graph', [ProjectDashboardController::class, 'boqWiseValue'])
             ->middleware('permission:project.view');
 
+     /**************************** attachment ***********************************/
+        Route::post('{project_id}/upload-file', [ProjectAttachmentController::class, 'upload']);
+        Route::get('{project_id}/files', [ProjectAttachmentController::class, 'list']);
 
+        Route::get('download-file/{id}', [ProjectAttachmentController::class, 'download']);
 
-
-/**** attachment */
- 
-
-    Route::post('{project_id}/upload-file',[ProjectAttachmentController::class,'upload']);
-    Route::get('{project_id}/files',[ProjectAttachmentController::class,'list']);
-
-    Route::get('download-file/{id}',[ProjectAttachmentController::class,'download']);
-
-    Route::delete('delete-file/{id}',[ProjectAttachmentController::class,'delete']);
-
- 
+        Route::delete('delete-file/{id}', [ProjectAttachmentController::class, 'delete']);
     });
 
     /*
@@ -81,17 +70,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
     | VENDOR MANAGEMENT
     |--------------------------------------------------------------------------
     */
-   // Route::prefix('vendors')->middleware('permission:vendor.manage')->group(function () {
-Route::prefix('vendors')->group(function () {
-Route::post('/{id}/documents', [VendorController::class, 'uploadDocument']);
-Route::get('/{id}/documents', [VendorController::class, 'getVendorDocuments']);
-Route::delete('/document/{id}', [VendorController::class,'deleteDocument']);
-Route::get('/document/download/{id}', [VendorController::class, 'downloadDocument']);
+    // Route::prefix('vendors')->middleware('permission:vendor.manage')->group(function () {
+    Route::prefix('vendors')->group(function () {
+        Route::post('/{id}/documents', [VendorController::class, 'uploadDocument']);
+        Route::get('/{id}/documents', [VendorController::class, 'getVendorDocuments']);
+        Route::delete('/document/{id}', [VendorController::class, 'deleteDocument']);
+        Route::get('/document/download/{id}', [VendorController::class, 'downloadDocument']);
         Route::post('/', [VendorController::class, 'store']);   // Create vendor
         Route::get('/', [VendorController::class, 'index']);    // List vendors
         Route::get('/{id}', [VendorController::class, 'show']); // View vendor
         Route::put('/{id}', [VendorController::class, 'update']);
-          Route::delete('/{id}', [VendorController::class, 'destroy']);
+        Route::delete('/{id}', [VendorController::class, 'destroy']);
     });
 
     /*
@@ -100,7 +89,7 @@ Route::get('/document/download/{id}', [VendorController::class, 'downloadDocumen
     |--------------------------------------------------------------------------
     */
     Route::prefix('purchase-orders')->group(function () {
-        Route::get('/', [PurchaseOrderController::class, 'index']); 
+        Route::get('/', [PurchaseOrderController::class, 'index']);
         Route::post('/', [PurchaseOrderController::class, 'store']); // Create PO
         Route::get('/{id}', [PurchaseOrderController::class, 'show']);
         Route::get('/project/{project_id}', [PurchaseOrderController::class, 'byProject']);
@@ -114,12 +103,12 @@ Route::get('/document/download/{id}', [VendorController::class, 'downloadDocumen
     Route::prefix('dc-in')->group(function () {
 
         Route::post('/', [DcInController::class, 'store']); // DC entry
-                Route::get('/', [DcInController::class, 'index']);
+        Route::get('/', [DcInController::class, 'index']);
         Route::get('/{id}', [DcInController::class, 'show']);
 
         Route::get('/project/{project_id}', [DcInController::class, 'byProject']);
     });
- /*
+    /*
     |--------------------------------------------------------------------------
     | DC OUT (Received QTY)
     |--------------------------------------------------------------------------
@@ -128,11 +117,11 @@ Route::get('/document/download/{id}', [VendorController::class, 'downloadDocumen
 
 
     Route::prefix('dc-outs')->group(function () {
-    Route::post('/', [DcOutController::class, 'store']);
-    Route::get('/', [DcOutController::class, 'index']);
-    Route::get('/{id}', [DcOutController::class, 'show']);
-    Route::get('/items/{id}', [DcOutController::class, 'items']);
-});
+        Route::post('/', [DcOutController::class, 'store']);
+        Route::get('/', [DcOutController::class, 'index']);
+        Route::get('/{id}', [DcOutController::class, 'show']);
+        Route::get('/items/{id}', [DcOutController::class, 'items']);
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -150,13 +139,10 @@ Route::get('/document/download/{id}', [VendorController::class, 'downloadDocumen
 
 
 
-Route::prefix('dashboard')->group(function () {
+    Route::prefix('dashboard')->group(function () {
 
-    Route::get('/boq-summary/{project_id}', [DashboardController::class, 'boqSummary']);
-    Route::get('/stock-summary/{project_id}', [DashboardController::class, 'stockSummary']);
-    Route::get('/po-summary/{project_id}', [DashboardController::class, 'poSummary']);
-
-});
-
-
+        Route::get('/boq-summary/{project_id}', [DashboardController::class, 'boqSummary']);
+        Route::get('/stock-summary/{project_id}', [DashboardController::class, 'stockSummary']);
+        Route::get('/po-summary/{project_id}', [DashboardController::class, 'poSummary']);
+    });
 });
