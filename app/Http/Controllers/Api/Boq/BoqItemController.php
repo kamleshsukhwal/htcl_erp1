@@ -9,6 +9,12 @@ use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Models\BoqItemFile;
+use Illuminate\Support\Facades\Storage;
+
+ 
+
+
 
 class BoqItemController extends Controller
 {
@@ -143,6 +149,51 @@ public function historyByDate(Request $request)
         'status' => true,
         'count'  => $data->count(),
         'data'   => $data
+    ]);
+}
+
+
+
+/****  File upload */
+
+public function uploadItemFile(Request $request, $itemId)
+{
+    $request->validate([
+        'file' => 'required|file|max:10240'
+    ]);
+
+    $file = $request->file('file');
+
+    $fileName = time().'_'.$file->getClientOriginalName();
+
+    $path = $file->storeAs("boq_items/$itemId", $fileName, 'public');
+
+    $record = BoqItemFile::create([
+        'boq_item_id' => $itemId,
+        'file_name' => $fileName,
+        'file_path' => $path,
+        'file_type' => $file->getClientOriginalExtension(),
+        'uploaded_by' => auth()->id()
+    ]);
+
+    return response()->json([
+        'status' => true,
+        'message' => 'BOQ item file uploaded successfully',
+        'data' => $record
+    ]);
+}
+
+
+/*** fetch uploaded file by ID***/
+
+public function getItemFiles($itemId)
+{
+    $files = BoqItemFile::where('boq_item_id', $itemId)->get();
+
+    return response()->json([
+        'status' => true,
+        'count' => $files->count(),
+        'data' => $files
     ]);
 }
 }

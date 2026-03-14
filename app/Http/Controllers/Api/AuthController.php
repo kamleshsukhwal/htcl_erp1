@@ -17,7 +17,7 @@ class AuthController extends Controller
             'data' => $request->user()
         ]);
     }
-    public function login(Request $request)
+   /* public function login(Request $request)
     {
         $request->validate([
             'email'    => 'required|email',
@@ -60,5 +60,77 @@ class AuthController extends Controller
             'roles'       => $roles,
             'permissions' => $permissions
         ]);
+    }*/
+
+        public function login(Request $request)
+{
+    $request->validate([
+        'email'    => 'required|email',
+        'password' => 'required'
+    ]);
+
+    $user = User::where('email', $request->email)->first();
+
+    if (!$user) {
+        return response()->json([
+            'status'  => false,
+            'message' => 'User not found'
+        ], 404);
     }
+
+    if (!Hash::check($request->password, $user->password)) {
+        return response()->json([
+            'status'  => false,
+            'message' => 'Invalid credentials'
+        ], 401);
+    }
+
+    // Create new token
+    $token = $user->createToken('erp-token');
+
+    $plainTextToken = $token->plainTextToken;
+
+    // Save token in users table
+    $user->session_token = $token->accessToken->id;
+    $user->save();
+
+    // Roles & Permissions
+    $roles       = $user->getRoleNames();
+    $role        = $roles->first();
+    $permissions = $user->getAllPermissions()->pluck('name');
+
+    return response()->json([
+        'status' => true,
+        'token'  => $plainTextToken,
+        'user'   => [
+            'id'    => $user->id,
+            'name'  => $user->name,
+            'email' => $user->email,
+            'role'  => $role
+        ],
+        'roles'       => $roles,
+        'permissions' => $permissions
+    ]);
+}
+
+
+public function checkSession(Request $request)
+{
+    $user = $request->user();
+
+    $currentTokenId = $request->user()->currentAccessToken()->id;
+
+    if ($user->session_token != $currentTokenId) {
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Same user already logged in another browser/device'
+        ]);
+    }
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Session valid'
+    ]);
+}
 }

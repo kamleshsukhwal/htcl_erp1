@@ -23,13 +23,14 @@ Route::prefix('boq')
         | BOQ Master
         |--------------------------------------------------------------------------
         */
+
         Route::get('/', [BoqController::class, 'index'])
             ->middleware('permission:boq.view');
 
         Route::post('/', [BoqController::class, 'store'])
             ->middleware('permission:boq.create');
   Route::get('/item-progress',[BoqItemProgressController::class, 'show']); // get data
-  Route::get('/item-progress/{id}',[BoqItemProgressController::class, 'show']); // get data
+  //Route::get('/item-progress',[BoqItemProgressController::class, 'show']); // get data
   
         Route::get('/{id}', [BoqController::class, 'show'])
             ->middleware('permission:boq.view');
@@ -43,6 +44,11 @@ Route::prefix('boq')
         Route::delete('/{id}', [BoqController::class, 'destroy'])
             ->middleware('permission:boq.delete');
 
+
+
+
+/***** BOQ file upload */
+Route::post('/{boqId}/upload', [BoqController::class, 'uploadFile']);
         /*
         |--------------------------------------------------------------------------
         | BOQ Revisions
@@ -91,7 +97,8 @@ Route::get(
 
   Route::post('/item-progress',[BoqItemProgressController::class, 'store']); //store and get data
 
-
+Route::post('/items/{itemId}/uploadFile', [BoqItemController::class, 'uploadItemFile']);
   
+  Route::get('/items/{itemId}/files', [BoqItemController::class, 'getItemFiles']);
   
     });
