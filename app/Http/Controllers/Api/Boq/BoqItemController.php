@@ -153,13 +153,12 @@ public function historyByDate(Request $request)
 }
 
 
-
-/****  File upload */
-
+ 
 public function uploadItemFile(Request $request, $itemId)
 {
     $request->validate([
-        'file' => 'required|file|max:10240'
+        'file' => 'required|file|max:10240',
+        'document_type' => 'required|string'
     ]);
 
     $file = $request->file('file');
@@ -173,6 +172,7 @@ public function uploadItemFile(Request $request, $itemId)
         'file_name' => $fileName,
         'file_path' => $path,
         'file_type' => $file->getClientOriginalExtension(),
+        'document_type' => $request->document_type,
         'uploaded_by' => auth()->id()
     ]);
 
@@ -182,7 +182,6 @@ public function uploadItemFile(Request $request, $itemId)
         'data' => $record
     ]);
 }
-
 
 /*** fetch uploaded file by ID***/
 
