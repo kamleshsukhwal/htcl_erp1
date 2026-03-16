@@ -43,7 +43,7 @@ Route::prefix('boq')
 
         Route::delete('/{id}', [BoqController::class, 'destroy'])
             ->middleware('permission:boq.delete');
-
+Route::get('/{boqId}/items', [BoqController::class, 'getItemsByBoq']);
 
 
 

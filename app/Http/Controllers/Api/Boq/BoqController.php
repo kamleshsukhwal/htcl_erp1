@@ -266,6 +266,16 @@ public function getBoqById($id)
             'message' => 'File uploaded successfully'
         ]);
     }
+    public function getItemsByBoq($boqId)
+    {
+        $items = BoqItem::where('boq_id', $boqId)->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'BOQ items fetched successfully',
+            'data' => $items
+        ]);
+    }
 
     // 🔁 COMMON FUNCTION – RECALCULATE TOTALS
     private function recalculateBoqAndProject($boqId)
