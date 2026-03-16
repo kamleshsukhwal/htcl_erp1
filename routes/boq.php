@@ -43,9 +43,11 @@ Route::prefix('boq')
 
         Route::delete('/{id}', [BoqController::class, 'destroy'])
             ->middleware('permission:boq.delete');
+
+
 Route::get('/{boqId}/items', [BoqController::class, 'getItemsByBoq']);
 
-
+Route::get('/{id}/items', [BoqController::class,'getBoqItems']);
 
 /***** BOQ file upload */
 Route::post('/{boqId}/upload', [BoqController::class, 'uploadFile']);

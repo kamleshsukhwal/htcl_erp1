@@ -181,18 +181,18 @@ public function uploadItemFile(Request $request, $itemId)
         'message' => 'BOQ item file uploaded successfully',
         'data' => $record
     ]);
-}
-
-/*** fetch uploaded file by ID***/
-
-public function getItemFiles($itemId)
+}public function getItemFiles($itemId)
 {
     $files = BoqItemFile::where('boq_item_id', $itemId)->get();
+
+    $files->transform(function ($file) {
+        $file->file_url = asset('storage/' . $file->file_path);
+        return $file;
+    });
 
     return response()->json([
         'status' => true,
         'count' => $files->count(),
         'data' => $files
     ]);
-}
-}
+}}
