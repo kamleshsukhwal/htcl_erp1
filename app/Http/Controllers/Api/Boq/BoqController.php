@@ -280,8 +280,9 @@ public function getBoqById($id)
     // 🔁 COMMON FUNCTION – RECALCULATE TOTALS
     private function recalculateBoqAndProject($boqId)
     {
-        $boqTotal = BoqItem::where('boq_id', $boqId)->sum('total_amount');
-
+      //  $boqTotal = BoqItem::where('boq_id', $boqId)->sum('total_amount');
+$boqTotal = BoqItem::where('boq_id', $boqId)
+    ->sum(DB::raw('quantity * rate'));
         $boq = Boq::find($boqId);
         $boq->update(['total_amount' => $boqTotal]);
 
@@ -313,20 +314,22 @@ public function getBoqById($id)
             $quantity = $row['quantity'] ?? $item->quantity;
             $rate     = $row['rate'] ?? $item->rate;
 
-            $item->update([
-                'sn'            => $row['sn'] ?? $item->sn,
-                'description'   => $row['description'] ?? $item->description,
-                'unit'          => $row['unit'] ?? $item->unit,
-                'quantity'      => $quantity,
-                'rate'          => $rate,
-                'total_amount'  => $quantity * $rate,
-                'scope'         => $row['scope'] ?? $item->scope,
-                'approved_make' => $row['approved_make'] ?? $item->approved_make,
-                'offered_make'  => $row['offered_make'] ?? $item->offered_make,
-            ]);
+           $item->update([
+    'sn' => $request->sn,
+    'description' => $request->description,
+    'unit' => $request->unit,
+    'quantity' => $request->quantity,
+    'rate' => $request->rate,
+    'total_amount' => $request->quantity * $request->rate,
+    'scope' => $request->scope,
+    'approved_make' => $request->approved_make,
+    'offered_make' => $request->offered_make,
+]);
+
+$this->recalculateBoqAndProject($item->boq_id);
         }
 
-        $this->recalculateBoqAndProject($boqId);
+       // $this->recalculateBoqAndProject($boqId);
     });
 
     return response()->json([
@@ -446,4 +449,18 @@ public function status($boq_id)
     ]);
 }
 
+
+
+/**** get header fies**/
+
+public function getBoqFiles($boqId)
+{
+    $files = BoqFile::where('boq_id', $boqId)->get();
+
+    return response()->json([
+        'status' => true,
+        'count' => $files->count(),
+        'data' => $files
+    ]);
+}
 }
