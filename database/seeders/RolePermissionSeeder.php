@@ -2,8 +2,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use App\Models\Role;
+use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
@@ -12,28 +12,34 @@ class RolePermissionSeeder extends Seeder
 {
     public function run()
     {
-        $permissions = [
-            'user.view',
-            'user.create',
-            'project.view',
-            'project.create',
-            'hr.view',
-            'finance.view'
+        // All modules from CheckPermission middleware prefixMap
+        $modules = [
+            'project', 'vendor', 'purchase-orders', 'dc-in', 'dc-outs',
+            'execution', 'boq', 'hr', 'clients', 'user', 'ratings',
+            'feedback', 'qa', 'ncr', 'audit', 'finance', 'dashboard',
         ];
 
-        foreach ($permissions as $perm) {
-            Permission::firstOrCreate(['name' => $perm]);
+        $actions = ['view', 'create', 'update', 'delete'];
+
+        // Generate and insert all module.action permissions
+        foreach ($modules as $module) {
+            foreach ($actions as $action) {
+                Permission::firstOrCreate(
+                    ['name' => "{$module}.{$action}"],
+                    ['guard_name' => 'web']
+                );
+            }
         }
 
-        $admin = Role::firstOrCreate(['name' => 'admin']);
-        $admin->givePermissionTo(Permission::all());
+        // Create admin role and assign all permissions
+        $admin = Role::firstOrCreate(['name' => 'admin'], ['guard_name' => 'web']);
+        $allPermissionIds = Permission::pluck('id')->toArray();
+        $admin->syncPermissions($allPermissionIds);
 
+        // Create admin user
         $user = User::firstOrCreate(
             ['email' => 'admin@gmail.com'],
-            [
-                'name' => 'Admin',
-                'password' => bcrypt('123456')
-            ]
+            ['name' => 'Admin', 'password' => bcrypt('123456')]
         );
 
         $user->assignRole('admin');

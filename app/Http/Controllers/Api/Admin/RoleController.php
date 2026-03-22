@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use App\Models\Role;
+use App\Models\Permission;
 
 class RoleController extends Controller
 {
@@ -18,7 +18,7 @@ class RoleController extends Controller
     {
         $request->validate(['name' => 'required|unique:roles,name']);
 
-        $role = Role::create(['name' => $request->name]);
+        $role = Role::create(['name' => $request->name , 'guard_name' => 'web']);
 
         return response()->json([
             'status' => true,
@@ -43,11 +43,29 @@ class RoleController extends Controller
     public function assignPermissions(Request $request, $id)
     {
         $role = Role::findOrFail($id);
-        $role->syncPermissions($request->permissions);
+
+        $incoming = $request->permissions;
+
+        // Show all permissions in DB to verify seeder ran
+        $allPerms = \Illuminate\Support\Facades\DB::table('permissions')->get(['id','name','guard_name']);
+
+        // Try to find matching ones manually
+        $items = is_array($incoming) ? $incoming : [$incoming];
+        $matched = \App\Models\Permission::whereIn('name', $items)->get(['id','name','guard_name']);
+
+        $role->syncPermissions($incoming);
+
+        $saved = \Illuminate\Support\Facades\DB::table('role_has_permissions')
+            ->where('role_id', $role->id)
+            ->pluck('permission_id');
 
         return response()->json([
-            'status' => true,
-            'message' => 'Permissions assigned'
+            'status'                  => true,
+            'debug_role_id'           => $role->id,
+            'debug_incoming'          => $incoming,
+            'debug_all_permissions'   => $allPerms,
+            'debug_matched'           => $matched,
+            'debug_saved_ids'         => $saved,
         ]);
     }
 }
