@@ -13,7 +13,7 @@ class DashboardController extends Controller
         return response()->json([
             'system' => [
                 'users' => \App\Models\User::count(),
-                'roles' => \Spatie\Permission\Models\Role::count(),
+                'roles' => \App\Models\Role::count(),
             ],
             'modules' => \App\Models\Module::pluck('is_enabled', 'name'),
             'summary' => [

@@ -3,9 +3,9 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Spatie\Permission\Middleware\PermissionMiddleware;
+use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\ForceAuthorizationHeader;
-use Spatie\Permission\Middleware\RoleMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -15,10 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(ForceAuthorizationHeader::class);
-          $middleware->alias([
-        'role' => RoleMiddleware::class,
-        'permission' => PermissionMiddleware::class,
-    ]);
+        $middleware->alias([
+            'role'       => CheckRole::class,
+            'permission' => CheckPermission::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

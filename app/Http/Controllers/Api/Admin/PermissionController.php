@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Permission;
+use App\Models\Permission;
 
 class PermissionController extends Controller
 {
@@ -18,7 +18,8 @@ class PermissionController extends Controller
         $request->validate(['name' => 'required|unique:permissions,name']);
 
         $permission = Permission::create([
-            'name' => $request->name
+            'name'       => $request->name,
+            'guard_name' => 'web',
         ]);
 
         return response()->json($permission);
