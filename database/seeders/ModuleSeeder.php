@@ -13,7 +13,11 @@ class ModuleSeeder extends Seeder
      */
 public function run()
 {
-    $modules = ['hr', 'finance', 'project', 'boq'];
+    $modules = [
+        'project', 'vendor', 'purchase-orders', 'dc-in', 'dc-outs',
+        'execution', 'boq', 'hr', 'clients', 'user', 'ratings',
+        'feedback', 'qa', 'ncr', 'audit', 'finance', 'dashboard',
+    ];
 
     foreach ($modules as $module) {
         Module::firstOrCreate(['name' => $module]);
