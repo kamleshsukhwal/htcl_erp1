@@ -203,28 +203,51 @@ public function getItemFiles($itemId)
 
 
     /**** Store BOQ items */
-
-    public function store(Request $request, $boqId)
+public function store(Request $request, $boqId)
 {
     $request->validate([
-        'item_name' => 'required',
-        'quantity' => 'required|numeric',
-        'rate' => 'required|numeric',
+        'items' => 'required|array|min:1',
+        'items.*.item_name' => 'required|string',
+        'items.*.quantity' => 'required|numeric',
+        'items.*.rate' => 'required|numeric',
     ]);
 
-    $item = BoqItem::create([
-        'boq_id' => $boqId,
-        'item_name' => $request->item_name,
-        'quantity' => $request->quantity,
-        'rate' => $request->rate,
-    ]);
+    $createdItems = [];
+
+    DB::transaction(function () use ($request, $boqId, &$createdItems) {
+
+        foreach ($request->items as $row) {
+
+            $qty  = $row['quantity'];
+            $rate = $row['rate'];
+
+            $item = BoqItem::create([
+                'boq_id'        => $boqId,
+                'sn'            => $row['sn'] ?? null,
+                'item_name'     => $row['item_name'],
+                'description'   => $row['description'] ?? null,
+                'unit'          => $row['unit'] ?? null,
+                'quantity'      => $qty,
+                'rate'          => $rate,
+                'total_amount'  => $qty * $rate,
+                'scope'         => $row['scope'] ?? null,
+                'approved_make' => $row['approved_make'] ?? null,
+                'offered_make'  => $row['offered_make'] ?? null,
+            ]);
+
+            $createdItems[] = $item;
+        }
+
+        // ✅ Recalculate totals
+        $this->recalculateBoqAndProject($boqId);
+    });
 
     return response()->json([
         'status' => true,
-        'message' => 'Item added successfully',
-        'data' => $item
+        'message' => 'BOQ items created successfully',
+        'count' => count($createdItems),
+        'data' => $createdItems
     ]);
 }
-
 
 }
