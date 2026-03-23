@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Traits\SendEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
+    use SendEmail;
     public function index()
     {
         return User::with('roles')->get();
@@ -30,6 +32,7 @@ class UserController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
+        
 
         $validated = $validator->validated();
 
@@ -40,9 +43,28 @@ class UserController extends Controller
         ]);
 
         $user->assignRole($validated['roles']);
-
-          // Fetch assigned roles
+        
+         // Fetch assigned roles
         $roles = $user->roles()->pluck('name'); // returns collection of role names
+
+
+       $this->sendMail(
+            $user->email,
+            'Welcome! Your Account Has Been Created',
+            "Hello {$user->name},<br><br>
+            Welcome! Your account has been successfully created.<br><br>
+            
+            <b>Account Details:</b><br>
+            Email: {$user->email}<br><br>
+            
+            You can now log in and start using our services.<br><br>
+            
+            If you did not create this account, please contact our support team immediately.<br><br>
+            
+            Regards,<br>
+            Support Team"
+        );
+        
 
         return response()->json([
             'status' => true,
