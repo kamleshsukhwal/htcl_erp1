@@ -202,14 +202,21 @@ public function getItemFiles($itemId)
 
 
 
-    /**** Store BOQ items */
-public function store(Request $request, $boqId)
+    /**** Store BOQ items */ public function store(Request $request, $boqId)
 {
     $request->validate([
         'items' => 'required|array|min:1',
-        'items.*.item_name' => 'required|string',
-        'items.*.quantity' => 'required|numeric',
-        'items.*.rate' => 'required|numeric',
+
+        'items.*.item_name'     => 'required|string|max:255',
+        'items.*.quantity'      => 'required|numeric|min:0',
+        'items.*.rate'          => 'required|numeric|min:0',
+
+        'items.*.sn'            => 'nullable|string|max:50',
+        'items.*.description'   => 'nullable|string',
+        'items.*.unit'          => 'nullable|string|max:50',
+        'items.*.scope'         => 'nullable|string|max:100',
+        'items.*.approved_make' => 'nullable|string|max:255',
+        'items.*.offered_make'  => 'nullable|string|max:255',
     ]);
 
     $createdItems = [];
@@ -222,14 +229,14 @@ public function store(Request $request, $boqId)
             $rate = $row['rate'];
 
             $item = BoqItem::create([
-                'boq_id'        => $boqId,
+                'boq_id'        => $boqId, // ✅ always from URL
                 'sn'            => $row['sn'] ?? null,
                 'item_name'     => $row['item_name'],
                 'description'   => $row['description'] ?? null,
                 'unit'          => $row['unit'] ?? null,
                 'quantity'      => $qty,
                 'rate'          => $rate,
-                'total_amount'  => $qty * $rate,
+                'total_amount'  => $qty * $rate, // ✅ backend calculation
                 'scope'         => $row['scope'] ?? null,
                 'approved_make' => $row['approved_make'] ?? null,
                 'offered_make'  => $row['offered_make'] ?? null,
@@ -238,16 +245,15 @@ public function store(Request $request, $boqId)
             $createdItems[] = $item;
         }
 
-        // ✅ Recalculate totals
+        // ✅ update totals
         $this->recalculateBoqAndProject($boqId);
     });
 
     return response()->json([
-        'status' => true,
+        'status'  => true,
         'message' => 'BOQ items created successfully',
-        'count' => count($createdItems),
-        'data' => $createdItems
+        'count'   => count($createdItems),
+        'data'    => $createdItems
     ]);
 }
-
 }
