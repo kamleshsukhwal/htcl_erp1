@@ -23,7 +23,7 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
             'roles' => 'required|array|min:1',
-            'roles.*' => 'exists:roles,name',
+            'roles.*' => 'exists:roles,id',
         ]);
 
         if ($validator->fails()) {
