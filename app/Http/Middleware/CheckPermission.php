@@ -71,8 +71,22 @@ class CheckPermission
      *   PUT  /api/projects/1  → project.update
      *   DELETE /api/projects/1 → project.delete
      */
+    /**
+     * GET routes that bypass permission checks entirely.
+     */
+    private array $whitelist = [
+        'api/boq/project/*',
+        'api/clients',
+        'api/projects',
+    ];
+
     public function handle(Request $request, Closure $next, string ...$permissions): mixed
     {
+        // Bypass permission check for whitelisted GET routes.
+        if (strtoupper($request->method()) === 'GET' && $request->is($this->whitelist)) {
+            return $next($request);
+        }
+
         $user = auth()->user();
 
         if (!$user) {
