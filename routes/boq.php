@@ -43,6 +43,9 @@ Route::prefix('boq')
 
         Route::delete('/{id}', [BoqController::class, 'destroy'])
             ->middleware('permission:boq.delete');
+            
+// Below route addd for storing items
+Route::post('/{boqId}/items', [BoqItemController::class, 'store']);
 
 
 Route::get('/{boqId}/items', [BoqController::class, 'getItemsByBoq']);

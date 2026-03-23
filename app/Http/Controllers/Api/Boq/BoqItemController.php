@@ -181,7 +181,9 @@ public function uploadItemFile(Request $request, $itemId)
         'message' => 'BOQ item file uploaded successfully',
         'data' => $record
     ]);
-}public function getItemFiles($itemId)
+}
+
+public function getItemFiles($itemId)
 {
     $files = BoqItemFile::where('boq_item_id', $itemId)->get();
 
@@ -195,4 +197,34 @@ public function uploadItemFile(Request $request, $itemId)
         'count' => $files->count(),
         'data' => $files
     ]);
-}}
+
+}
+
+
+
+    /**** Store BOQ items */
+
+    public function store(Request $request, $boqId)
+{
+    $request->validate([
+        'item_name' => 'required',
+        'quantity' => 'required|numeric',
+        'rate' => 'required|numeric',
+    ]);
+
+    $item = BoqItem::create([
+        'boq_id' => $boqId,
+        'item_name' => $request->item_name,
+        'quantity' => $request->quantity,
+        'rate' => $request->rate,
+    ]);
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Item added successfully',
+        'data' => $item
+    ]);
+}
+
+
+}
