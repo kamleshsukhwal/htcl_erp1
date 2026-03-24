@@ -402,8 +402,25 @@ public function bulkUpdate(Request $request)
     ]);
 }
 
+/*
+public function viewFile($id)
+{
+    $file = BoqFile::findOrFail($id);
 
+    $path = $file->file_path;
 
+    if (!Storage::exists($path)) {
+        abort(404, 'File not found');
+    }
+
+    // 🔒 Optional security (VERY IMPORTANT)
+    // Check if user has access to this BOQ
+    // if (auth()->user()->project_id != $file->boq->project_id) {
+    //     abort(403, 'Unauthorized');
+    // }
+
+    return response()->file(storage_path('app/' . $path));
+}*/
 /**** for dashboard usage */
 
 
@@ -461,6 +478,39 @@ public function getBoqFiles($boqId)
         'status' => true,
         'count' => $files->count(),
         'data' => $files
+    ]);
+}
+
+ public function deleteFile($id)
+{
+    $file = BoqFile::findOrFail($id);
+
+    $path = $file->file_path;
+
+    // 🔒 Optional: check permission
+    // if (auth()->user()->project_id != $file->boq->project_id) {
+    //     return response()->json(['message' => 'Unauthorized'], 403);
+    // }
+
+    // 🚫 Prevent delete if BOQ approved (optional)
+    if ($file->boq && $file->boq->status === 'approved') {
+        return response()->json([
+            'status' => false,
+            'message' => 'Cannot delete file from approved BOQ'
+        ], 403);
+    }
+
+    // 🗑️ Delete file from storage
+    if (Storage::disk('local')->exists($path)) {
+        Storage::disk('local')->delete($path);
+    }
+
+    // 🧾 Soft delete from DB
+    $file->delete();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'File deleted successfully'
     ]);
 }
 }
