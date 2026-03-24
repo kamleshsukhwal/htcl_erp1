@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\BoqItemFile;
+use App\Models\BoqFile;
 use Illuminate\Support\Facades\Storage;
 
  
@@ -165,7 +166,7 @@ public function uploadItemFile(Request $request, $itemId)
 
     $fileName = time().'_'.$file->getClientOriginalName();
 
-    $path = $file->storeAs("boq_items/$itemId", $fileName, 'public');
+    $path = $file->storeAs("boq_items/$itemId", $fileName, 'private');
 
     $record = BoqItemFile::create([
         'boq_item_id' => $itemId,
@@ -187,8 +188,8 @@ public function getItemFiles($itemId)
 {
     $files = BoqItemFile::where('boq_item_id', $itemId)->get();
 
-    $files->transform(function ($file) {
-        $file->file_url = asset('storage/' . $file->file_path);
+    $files->transform(function ($file) {     
+        $file->file_url = url('api/boq/boq-item-files/view/' . $file->id);
         return $file;
     });
 
@@ -256,4 +257,37 @@ public function getItemFiles($itemId)
         'data'    => $createdItems
     ]);
 }
+     public function viewFile($id)
+    {
+        $file =BoqItemFile::where('boq_item_id' , $id)->orderBy('id','desc')->first();
+
+        $path = Storage::disk('private')->path($file->file_path);
+
+        if (!file_exists($path)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'File not found'
+            ], 404);
+        }
+
+        return response()->file($path);
+    }
+
+    // ✅ Download file
+    public function downloadFile($id)
+    {
+        $file = BoqItemFile::where('boq_item_id' , $id)->orderBy('id','desc')->first();
+
+        if (!Storage::disk('private')->exists($file->file_path)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'File not found'
+            ], 404);
+        }
+
+        return Storage::disk('private')->download(
+            $file->file_path,
+            $file->file_name
+        );
+    }
 }
