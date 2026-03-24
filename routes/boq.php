@@ -55,7 +55,7 @@ Route::get('/{id}/items', [BoqController::class,'getBoqItems']);
 /***** BOQ file upload */
 Route::post('/{boqId}/upload', [BoqController::class, 'uploadFile']);
   
-Route::middleware('auth:sanctum')->get('/{id}/files', [BoqController::class, 'viewFile']);
+Route::get('/{boqId}/files', [BoqController::class, 'getBoqFiles']);
 
 /*
         |--------------------------------------------------------------------------
