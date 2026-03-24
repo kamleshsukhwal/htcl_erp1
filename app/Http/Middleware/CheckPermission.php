@@ -59,6 +59,7 @@ class CheckPermission
         'audit'          => 'audit',
         'finance'        => 'finance',
         'dashboard'      => 'dashboard',
+        'admin'      => 'admin',
     ];
 
     /**
@@ -88,7 +89,7 @@ class CheckPermission
             return $next($request);
         }
 
-        $user = auth()->user();
+        $user = auth('sanctum')->user();
 
         // If permission name(s) supplied explicitly, check those.
         if (!empty($permissions)) {

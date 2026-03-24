@@ -16,7 +16,7 @@ class RolePermissionSeeder extends Seeder
         $modules = [
             'project', 'vendor', 'purchase-orders', 'dc-in', 'dc-outs',
             'execution', 'boq', 'hr', 'clients', 'user', 'ratings',
-            'feedback', 'qa', 'ncr', 'audit', 'finance', 'dashboard',
+            'feedback', 'qa', 'ncr', 'audit', 'finance', 'dashboard','admin',
         ];
 
         $actions = ['view', 'create', 'update', 'delete'];

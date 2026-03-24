@@ -19,13 +19,13 @@ class RoleController extends Controller
     {
         $request->validate([
             'name'   => 'required|unique:roles,name',
-            'status' => 'required|in:0,1' // or boolean
+            'status' => 'nullable|in:0,1' // or boolean
         ]);
 
         $role = Role::create([
             'name'       => $request->name,
             'guard_name' => 'web',
-            'status'     => $request->status,
+            'status'     => $request->status ?? 1 ,
             'created_by' => auth()->id() ?? 0,
             'updated_by' => auth()->id() ?? 0,
         ]);
@@ -42,12 +42,12 @@ class RoleController extends Controller
 
         $request->validate([
             'name'   => 'required|unique:roles,name,' . $id,
-            'status' => 'required|in:0,1' // or boolean
+            'status' => 'nullable|in:0,1' // or boolean
         ]);
 
         $role->update([
             'name'       => $request->name,
-            'status'     => $request->status,
+            'status'     => $request->has('status') ? $request->status : $role->status ,
             'updated_by' => auth()->id() ?? 0
         ]);
 
