@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClientController;
+use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\FeedbackController;
 
@@ -102,6 +103,8 @@ Route::get('/check-session', [AuthController::class, 'checkSession'])
     | Feedback APIs
     |--------------------------------------------------------------------------
     */
+
+    Route::post('/email/send-with-attachment', [EmailController::class, 'sendWithAttachment']);
 
     Route::post('/feedback', [FeedbackController::class, 'store']);
     Route::get('/feedback', [FeedbackController::class, 'index']);
