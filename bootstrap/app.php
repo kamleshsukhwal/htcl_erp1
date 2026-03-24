@@ -19,6 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role'       => CheckRole::class,
             'permission' => CheckPermission::class,
         ]);
+        // Apply CheckPermission globally to all API routes (auto-derives from URL segment).
+        $middleware->api(append: [CheckPermission::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

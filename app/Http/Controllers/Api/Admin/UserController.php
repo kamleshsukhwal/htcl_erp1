@@ -41,8 +41,9 @@ class UserController extends Controller
             'email' => $validated['email'],
             'password' => bcrypt($validated['password']),
         ]);
+        $rolesname=Role::select('name')->findOrFail($validated['roles']);
 
-        $user->assignRole($validated['roles']);
+        $user->assignRole($rolesname);
         
          // Fetch assigned roles
         $roles = $user->roles()->pluck('name'); // returns collection of role names

@@ -6,30 +6,50 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Role;
 use App\Models\Permission;
+use App\Models\Module;
 
 class RoleController extends Controller
 {
     public function index()
     {
-        return Role::all();
+        return Role::where('status',1)->get();
     }
 
     public function store(Request $request)
     {
-        $request->validate(['name' => 'required|unique:roles,name']);
+        $request->validate([
+            'name'   => 'required|unique:roles,name',
+            'status' => 'required|in:0,1' // or boolean
+        ]);
 
-        $role = Role::create(['name' => $request->name , 'guard_name' => 'web']);
+        $role = Role::create([
+            'name'       => $request->name,
+            'guard_name' => 'web',
+            'status'     => $request->status,
+            'created_by' => auth()->id() ?? 0,
+            'updated_by' => auth()->id() ?? 0,
+        ]);
 
         return response()->json([
             'status' => true,
-            'role' => $role
+            'role'   => $role
         ]);
     }
 
     public function update(Request $request, $id)
     {
         $role = Role::findOrFail($id);
-        $role->update(['name' => $request->name]);
+
+        $request->validate([
+            'name'   => 'required|unique:roles,name,' . $id,
+            'status' => 'required|in:0,1' // or boolean
+        ]);
+
+        $role->update([
+            'name'       => $request->name,
+            'status'     => $request->status,
+            'updated_by' => auth()->id() ?? 0
+        ]);
 
         return response()->json(['status' => true]);
     }
@@ -40,9 +60,18 @@ class RoleController extends Controller
         return response()->json(['status' => true]);
     }
 
+    public function rolesAndModules()
+    {
+        return response()->json([
+            'status'  => true,
+            'roles'   => Role::where('status',1)->get(),
+            'modules' => Module::where('status',1)->get(),
+        ]);
+    }
+
     public function assignPermissions(Request $request, $id)
     {
-        $role = Role::findOrFail($id);
+        $role = Role::where('status',1)->findOrFail($id);
 
         $incoming = $request->permissions;
 

@@ -8,6 +8,6 @@ class Module extends Model
 {
         protected $table = 'modules'; // ✅ IMPORTANT
    // protected $fillable = ['name', 'is_enabled'];
-      protected $fillable = ['name', 'is_enabled'];
+    protected $fillable = ['name', 'is_enabled', 'status', 'created_by', 'updated_by'];
 }
  
