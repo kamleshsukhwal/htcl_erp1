@@ -43,7 +43,7 @@ Route::prefix('boq')
 
         Route::delete('/{id}', [BoqController::class, 'destroy'])
             ->middleware('permission:boq.delete');
-            
+
 // Below route addd for storing items
 Route::post('/{boqId}/items', [BoqItemController::class, 'store']);
 
@@ -54,7 +54,10 @@ Route::get('/{id}/items', [BoqController::class,'getBoqItems']);
 
 /***** BOQ file upload */
 Route::post('/{boqId}/upload', [BoqController::class, 'uploadFile']);
-        /*
+  
+Route::middleware('auth:sanctum')->get('/{id}/files', [BoqController::class, 'viewFile']);
+
+/*
         |--------------------------------------------------------------------------
         | BOQ Revisions
         |--------------------------------------------------------------------------

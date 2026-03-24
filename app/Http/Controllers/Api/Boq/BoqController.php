@@ -403,7 +403,24 @@ public function bulkUpdate(Request $request)
 }
 
 
+public function viewFile($id)
+{
+    $file = BoqFile::findOrFail($id);
 
+    $path = $file->file_path;
+
+    if (!Storage::exists($path)) {
+        abort(404, 'File not found');
+    }
+
+    // 🔒 Optional security (VERY IMPORTANT)
+    // Check if user has access to this BOQ
+    // if (auth()->user()->project_id != $file->boq->project_id) {
+    //     abort(403, 'Unauthorized');
+    // }
+
+    return response()->file(storage_path('app/' . $path));
+}
 /**** for dashboard usage */
 
 
