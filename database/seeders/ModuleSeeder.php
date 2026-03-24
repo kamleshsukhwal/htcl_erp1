@@ -20,7 +20,13 @@ public function run()
     ];
 
     foreach ($modules as $module) {
-        Module::firstOrCreate(['name' => $module]);
+        Module::firstOrCreate(
+            ['name' => $module],
+            ['status' => 1, 'is_enabled' => true, 'created_by' => 0, 'updated_by' => 0]
+        );
+
+        // Ensure status is set for already-existing rows
+        Module::where('name', $module)->update(['status' => 1]);
     }
 }
 }

@@ -45,7 +45,7 @@ Route::get('/test-mail', function () {
 */
 
 Route::prefix('admin')
-    ->middleware(['auth:sanctum', 'role:admin'])
+    // ->middleware(['auth:sanctum', 'role:admin'])
     ->group(function () {
 
         Route::get('/modules', [ModuleController::class, 'index']);
@@ -54,6 +54,7 @@ Route::prefix('admin')
 
         Route::apiResource('/roles', RoleController::class);
         Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions']);
+        Route::get('/roles-moodules', [RoleController::class, 'rolesAndModules']);
     });
 
 

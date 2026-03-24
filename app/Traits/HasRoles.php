@@ -26,7 +26,7 @@ trait HasRoles
     public function assignRole($role): static
     {
         $names = is_array($role) ? $role : [$role];
-        $ids = Role::whereIn('id', $names)->pluck('id')->toArray();
+        $ids = Role::whereIn('name', $names)->pluck('id')->toArray();
         $existing = $this->roles()->pluck('roles.id')->toArray();
         $toAttach = array_diff($ids, $existing);
         if ($toAttach) {

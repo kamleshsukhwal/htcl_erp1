@@ -32,7 +32,14 @@ class RolePermissionSeeder extends Seeder
         }
 
         // Create admin role and assign all permissions
-        $admin = Role::firstOrCreate(['name' => 'admin'], ['guard_name' => 'web']);
+        $admin = Role::firstOrCreate(
+            ['name' => 'admin'],
+            ['guard_name' => 'web', 'status' => 1, 'created_by' => 0, 'updated_by' => 0]
+        );
+
+        // Ensure status is set for existing seeded roles
+        $admin->status = 1;
+        $admin->save();
         $allPermissionIds = Permission::pluck('id')->toArray();
         $admin->syncPermissions($allPermissionIds);
 

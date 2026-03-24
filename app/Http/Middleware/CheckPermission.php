@@ -78,6 +78,7 @@ class CheckPermission
         'api/boq/project/*',
         'api/clients',
         'api/projects',
+        '/api/admin/roles-moodules',
     ];
 
     public function handle(Request $request, Closure $next, string ...$permissions): mixed
@@ -89,12 +90,11 @@ class CheckPermission
 
         $user = auth()->user();
 
-        if (!$user) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
-        }
-
         // If permission name(s) supplied explicitly, check those.
         if (!empty($permissions)) {
+            if (!$user) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
             foreach ($permissions as $permission) {
                 if ($user->hasPermissionTo($permission)) {
                     return $next($request);
@@ -105,13 +105,19 @@ class CheckPermission
 
         // Auto-derive permission from route prefix map + HTTP method.
         $segment = $request->segment(2); // e.g. "projects" from /api/projects/1
-        $module  = $this->prefixMap[$segment] ?? $segment;
-        $action  = $this->methodMap[strtoupper($request->method())] ?? 'view';
 
-        if (!$module) {
+        // If segment is not in prefixMap, this route has no permission rule — pass through.
+        if (!array_key_exists($segment, $this->prefixMap)) {
             return $next($request);
         }
 
+        // If user is not authenticated, pass through — let auth:sanctum handle it.
+        if (!$user) {
+            return $next($request);
+        }
+
+        $module  = $this->prefixMap[$segment];
+        $action  = $this->methodMap[strtoupper($request->method())] ?? 'view';
         $derived = $module . '.' . $action; // e.g. "project.view"
 
         if (!$user->hasPermissionTo($derived)) {
