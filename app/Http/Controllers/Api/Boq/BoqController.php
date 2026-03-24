@@ -402,7 +402,7 @@ public function bulkUpdate(Request $request)
     ]);
 }
 
-
+/*
 public function viewFile($id)
 {
     $file = BoqFile::findOrFail($id);
@@ -420,7 +420,7 @@ public function viewFile($id)
     // }
 
     return response()->file(storage_path('app/' . $path));
-}
+}*/
 /**** for dashboard usage */
 
 
