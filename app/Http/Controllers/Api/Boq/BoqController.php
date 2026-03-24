@@ -480,4 +480,37 @@ public function getBoqFiles($boqId)
         'data' => $files
     ]);
 }
+
+ public function deleteFile($id)
+{
+    $file = BoqFile::findOrFail($id);
+
+    $path = $file->file_path;
+
+    // 🔒 Optional: check permission
+    // if (auth()->user()->project_id != $file->boq->project_id) {
+    //     return response()->json(['message' => 'Unauthorized'], 403);
+    // }
+
+    // 🚫 Prevent delete if BOQ approved (optional)
+    if ($file->boq && $file->boq->status === 'approved') {
+        return response()->json([
+            'status' => false,
+            'message' => 'Cannot delete file from approved BOQ'
+        ], 403);
+    }
+
+    // 🗑️ Delete file from storage
+    if (Storage::disk('local')->exists($path)) {
+        Storage::disk('local')->delete($path);
+    }
+
+    // 🧾 Soft delete from DB
+    $file->delete();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'File deleted successfully'
+    ]);
+}
 }

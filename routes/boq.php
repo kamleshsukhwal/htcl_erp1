@@ -57,6 +57,7 @@ Route::post('/{boqId}/upload', [BoqController::class, 'uploadFile']);
   
 Route::get('/{boqId}/files', [BoqController::class, 'getBoqFiles']);
 
+Route::delete('/file/{boqId}', [BoqController::class, 'deleteFile']);
 /*
         |--------------------------------------------------------------------------
         | BOQ Revisions
