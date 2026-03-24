@@ -7,7 +7,7 @@ use App\Models\User;
 use App\Traits\SendEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-
+use App\Models\Role;
 class UserController extends Controller
 {
     use SendEmail;
