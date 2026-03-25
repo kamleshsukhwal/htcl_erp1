@@ -10,7 +10,7 @@ use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\FeedbackController;
-
+use App\Http\Controllers\Api\Inventory\StockController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
@@ -110,7 +110,20 @@ Route::get('/check-session', [AuthController::class, 'checkSession'])
     Route::get('/feedback', [FeedbackController::class, 'index']);
     Route::get('/feedback/filter', [FeedbackController::class, 'filterByDate']);
 
-    /*
+
+ /*
+    |--------------------------------------------------------------------------
+    | Module Stock add update while DC IN DC-OUT
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('inventory')->group(function () {
+Route::get('/stock', [StockController::class, 'index']);
+Route::get('/stock/{boq_item_id}', [StockController::class, 'show']);
+Route::get('/stock-ledger/{boq_item_id}', [StockController::class, 'ledger']);
+Route::get('/low-stock', [StockController::class, 'lowStock']);   
+    });
+/*
     |--------------------------------------------------------------------------
     | Module Routes
     |--------------------------------------------------------------------------

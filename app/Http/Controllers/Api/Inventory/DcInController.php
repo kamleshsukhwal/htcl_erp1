@@ -6,18 +6,30 @@ use App\Http\Controllers\Controller;
 use App\Models\BoqItemProgress;
 use App\Models\DcIn;
 use App\Models\DcInItem;
- 
+use App\Models\Stock;
+use App\Models\StockTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-   class DcInController extends Controller
+class DcInController extends Controller
 {
     public function store(Request $request)
     {
+        // ✅ Validation
+        $request->validate([
+            'vendor_id' => 'required|exists:vendors,id',
+            'po_id' => 'required|exists:purchase_orders,id',
+            'delivery_channel' => 'required|in:vendor,warehouse,site',
+            'items' => 'required|array',
+            'items.*.boq_item_id' => 'required|exists:boq_items,id',
+            'items.*.qty' => 'required|numeric|min:0.01',
+        ]);
+
         DB::transaction(function () use ($request) {
 
+            // ✅ Create DC IN
             $dc = DcIn::create([
-                'dc_number' => 'DC'.time(),
+                'dc_number' => 'DC' . time(),
                 'vendor_id' => $request->vendor_id,
                 'purchase_order_id' => $request->po_id,
                 'delivery_channel' => $request->delivery_channel,
@@ -26,25 +38,48 @@ use Illuminate\Support\Facades\DB;
 
             foreach ($request->items as $item) {
 
+                // ✅ Save DC IN Item
                 DcInItem::create([
                     'dc_in_id' => $dc->id,
-                    'boq_item_id' => $item['boq_id'],
+                    'boq_item_id' => $item['boq_item_id'],
                     'supplied_qty' => $item['qty'],
-                    //'boq_item_id' => $item['boq_id'],
                 ]);
 
-                // 🔥 Update BOQ Progress
+                // 🔥 STOCK UPDATE (ADD)
+                Stock::updateOrCreate(
+                    ['boq_item_id' => $item['boq_item_id']],
+                    ['available_qty' => DB::raw("available_qty + {$item['qty']}")]
+                );
+
+                // 🔥 STOCK TRANSACTION
+                StockTransaction::create([
+                    'boq_item_id' => $item['boq_item_id'],
+                    'type' => 'IN',
+                    'quantity' => $item['qty'],
+                    'reference_type' => 'DC_IN',
+                    'reference_id' => $dc->id
+                ]);
+
+                // 🔥 OPTIONAL: If you want to track supply in progress table
                 BoqItemProgress::updateOrCreate(
-                    ['boq_item_id' => $item['boq_id']],
-                    ['supplied_qty' => DB::raw('supplied_qty + '.$item['qty'])]
+                    [
+                        'boq_item_id' => $item['boq_item_id'],
+                        'entry_date' => now()->toDateString()
+                    ],
+                    [
+                        'executed_qty' => DB::raw("executed_qty + {$item['qty']}")
+                    ]
                 );
             }
         });
 
-        return response()->json(['message'=>'DC IN saved']);
+        return response()->json([
+            'status' => true,
+            'message' => 'DC IN saved successfully'
+        ]);
     }
 
-      /*
+    /*
     |--------------------------------------------------------------------------
     | LIST ALL DC IN (INDEX)
     |--------------------------------------------------------------------------
@@ -53,7 +88,6 @@ use Illuminate\Support\Facades\DB;
     {
         $query = DcIn::with(['items.boqItem']);
 
-        // Optional Filters
         if ($request->vendor_id) {
             $query->where('vendor_id', $request->vendor_id);
         }
@@ -73,6 +107,7 @@ use Illuminate\Support\Facades\DB;
         $dcList = $query->latest()->paginate(10);
 
         return response()->json([
+            'status' => true,
             'count' => $dcList->total(),
             'data' => $dcList
         ]);
@@ -85,13 +120,11 @@ use Illuminate\Support\Facades\DB;
     */
     public function show($id)
     {
-        $dc = DcIn::with([
-            'items.boqItem'
-        ])->findOrFail($id);
+        $dc = DcIn::with(['items.boqItem'])->findOrFail($id);
 
         return response()->json([
+            'status' => true,
             'data' => $dc
         ]);
     }
-
 }
