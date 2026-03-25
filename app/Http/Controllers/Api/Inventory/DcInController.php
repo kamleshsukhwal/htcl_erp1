@@ -15,29 +15,12 @@ class DcInController extends Controller
 {
     public function store(Request $request)
     {
-        // ✅ Validation
-
-
-
-        if ($request->has('items')) {
-    $items = $request->items;
-
-    foreach ($items as $key => $item) {
-        if (isset($item['item_id'])) {
-            $items[$key]['boq_item_id'] = $item['item_id'];
-        }
-    }
-
-    $request->merge(['items' => $items]);
-}
-
-
         $request->validate([
             'vendor_id' => 'required|exists:vendors,id',
             'po_id' => 'required|exists:purchase_orders,id',
             'delivery_channel' => 'required|in:vendor,warehouse,site',
             'items' => 'required|array',
-            'items.*.boq_item_id' => 'required|exists:boq_items,id',
+            'items.*.boq_id' => 'required|exists:boq_items,id',
             'items.*.qty' => 'required|numeric|min:0.01',
         ]);
 
@@ -57,19 +40,19 @@ class DcInController extends Controller
                 // ✅ Save DC IN Item
                 DcInItem::create([
                     'dc_in_id' => $dc->id,
-                    'boq_item_id' => $item['boq_item_id'],
+                    'boq_item_id' => $item['boq_id'],
                     'supplied_qty' => $item['qty'],
                 ]);
 
                 // 🔥 STOCK UPDATE (ADD)
                 Stock::updateOrCreate(
-                    ['boq_item_id' => $item['boq_item_id']],
+                    ['boq_item_id' => $item['boq_id']],
                     ['available_qty' => DB::raw("available_qty + {$item['qty']}")]
                 );
 
                 // 🔥 STOCK TRANSACTION
                 StockTransaction::create([
-                    'boq_item_id' => $item['boq_item_id'],
+                    'boq_item_id' => $item['boq_id'],
                     'type' => 'IN',
                     'quantity' => $item['qty'],
                     'reference_type' => 'DC_IN',
@@ -79,7 +62,7 @@ class DcInController extends Controller
                 // 🔥 OPTIONAL: If you want to track supply in progress table
                 BoqItemProgress::updateOrCreate(
                     [
-                        'boq_item_id' => $item['boq_item_id'],
+                        'boq_item_id' => $item['boq_id'],
                         'entry_date' => now()->toDateString()
                     ],
                     [
