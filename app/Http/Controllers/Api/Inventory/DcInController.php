@@ -16,6 +16,22 @@ class DcInController extends Controller
     public function store(Request $request)
     {
         // ✅ Validation
+
+
+
+        if ($request->has('items')) {
+    $items = $request->items;
+
+    foreach ($items as $key => $item) {
+        if (isset($item['item_id'])) {
+            $items[$key]['boq_item_id'] = $item['item_id'];
+        }
+    }
+
+    $request->merge(['items' => $items]);
+}
+
+
         $request->validate([
             'vendor_id' => 'required|exists:vendors,id',
             'po_id' => 'required|exists:purchase_orders,id',
