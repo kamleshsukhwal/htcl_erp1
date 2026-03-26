@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Employee_detail;
 use App\Models\Employee_profile;
 use App\Models\Employee_document;
+use App\Models\Attendence;
 class Employee extends Model
 {
     /** @use HasFactory<\Database\Factories\EmployeeFactory> */
@@ -32,5 +33,9 @@ class Employee extends Model
     public function documents()
     {
         return $this->hasMany(Employee_document::class,'employee_id');
+    }
+
+    public function attendence(){
+        return $this->hasMany(Attendence::class,'employee_id');
     }
 }
