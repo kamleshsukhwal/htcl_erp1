@@ -158,7 +158,7 @@ public function uploadDocument(Request $request, $vendorId)
     $fileName = uniqid().'_'.$file->getClientOriginalName();
 
     // store in storage/app/private/vendors
-    $file->storeAs('vendors', $fileName,'local');
+    $file->storeAs('vendors', $fileName,'private');
 
     $attachment = VendorAttachment::create([
         'vendor_id' => $vendorId,
@@ -213,14 +213,14 @@ public function downloadDocument($id)
 
     $path = $attachment->file_path;
 
-    if (!Storage::disk('local')->exists($path)) {
+    if (!Storage::disk('private')->exists($path)) {
         return response()->json([
             'status' => false,
             'message' => 'File missing on server'
         ], 404);
     }
 
-    return Storage::disk('local')->download($path, $attachment->original_name);
+    return Storage::disk('private')->download($path, $attachment->original_name);
 }
 
 
@@ -239,8 +239,8 @@ public function deleteDocument($id)
 
     $path = $attachment->file_path;
 
-    if (Storage::disk('local')->exists($path)) {
-        Storage::disk('local')->delete($path);
+    if (Storage::disk('private')->exists($path)) {
+        Storage::disk('private')->delete($path);
     }
 
     $attachment->delete();
@@ -250,4 +250,37 @@ public function deleteDocument($id)
         'message' => 'Document deleted successfully'
     ]);
 }
+     public function viewFile($id)
+    {
+        $file =VendorAttachment::where('vendor_id' , $id)->orderBy('id','desc')->first();
+
+        $path = Storage::disk('private')->path($file->file_path);
+
+        if (!file_exists($path)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'File not found'
+            ], 404);
+        }
+
+        return response()->file($path);
+    }
+
+    // ✅ Download file
+    public function downloadFile($id)
+    {
+        $file = VendorAttachment::where('vendor_id' , $id)->orderBy('id','desc')->first();
+
+        if (!Storage::disk('private')->exists($file->file_path)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'File not found'
+            ], 404);
+        }
+
+        return Storage::disk('private')->download(
+            $file->file_path,
+            $file->file_name
+        );
+    }
 }

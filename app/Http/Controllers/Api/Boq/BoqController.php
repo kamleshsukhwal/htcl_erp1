@@ -330,7 +330,7 @@ public function getBoqById($id)
         $fileName = time() . '_' . preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $file->getClientOriginalName());
 
 
-        $path = $file->storeAs("boqs/$boqId", $fileName, 'public');
+        $path = $file->storeAs("boqs/$boqId", $fileName, 'private');
 
         BoqFile::create([
             'boq_id'     => $boqId,
@@ -594,4 +594,38 @@ public function getBoqFiles($boqId)
         'message' => 'File deleted successfully'
     ]);
 }
+
+     public function viewFile($id)
+    {
+        $file =BoqFile::where('boq_id' , $id)->orderBy('id','desc')->first();
+
+        $path = Storage::disk('private')->path($file->file_path);
+
+        if (!file_exists($path)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'File not found'
+            ], 404);
+        }
+
+        return response()->file($path);
+    }
+
+    // ✅ Download file
+    public function downloadFile($id)
+    {
+        $file = BoqFile::where('boq_id' , $id)->orderBy('id','desc')->first();
+
+        if (!Storage::disk('private')->exists($file->file_path)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'File not found'
+            ], 404);
+        }
+
+        return Storage::disk('private')->download(
+            $file->file_path,
+            $file->file_name
+        );
+    }
 }
