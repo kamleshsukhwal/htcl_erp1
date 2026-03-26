@@ -81,7 +81,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/{id}', [VendorController::class, 'show']); // View vendor
         Route::put('/{id}', [VendorController::class, 'update']);
         Route::delete('/{id}', [VendorController::class, 'destroy']);
+     Route::prefix('vendors-files')->group(function () {
+        // View file (open in browser)
+        Route::get('view/{id}', [VendorController::class, 'viewFile']);
+        // Download file
+        Route::get('download/{id}', [ VendorController::class, 'downloadFile']);
+
     });
+    });
+
+   
 
     /*
     |--------------------------------------------------------------------------

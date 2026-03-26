@@ -39,7 +39,7 @@ class EmployeeDocument extends Controller
             'documents.*' => 'file|mimes:pdf,jpeg,png,jpg,doc,docx|max:2048'
         ]);
 
-        
+
         $files = $request->file('documents');
 
         if (!$files) {
@@ -127,46 +127,47 @@ class EmployeeDocument extends Controller
      */
     public function update(Request $request, string $id)
     {
-       DB::beginTransaction();
-        try{
-        $request->validate([
-            'documents' => 'required|array',
-            'documents.*' => 'required|file|mimes:pdf,jpeg,png,jpg,doc,docx|max:2048'
-        ]);
-        $files = $request->file('documents');
-
-
-        foreach ($request->file('documents') as $type => $file) {
-            $exist = employee_document::where('employee_id', $id)
-                ->where('document_type', $type)->first();
-
-            if (!$exist) {
-                throw new \Exception("Document of type $type does not exist for this employee");
-
-            }
-            $document_name = $type . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-
-            $path = $file->storeAs("Employee_documents/$id", $document_name, 'public');
-            $oldpath =$exist->document_path;
-            $exist->update([
-                'document_name' => $document_name,
-                'document_path' => $path,
-                'uploaded_by' => Auth::id()
+        DB::beginTransaction();
+        try {
+            $request->validate([
+                'documents' => 'required|array',
+                'documents.*' => 'required|file|mimes:pdf,jpeg,png,jpg,doc,docx|max:2048'
             ]);
+            $files = $request->file('documents');
+
+
+            foreach ($request->file('documents') as $type => $file) {
+                $exist = employee_document::where('employee_id', $id)
+                    ->where('document_type', $type)->first();
+
+                if (!$exist) {
+                    throw new \Exception("Document of type $type does not exist for this employee");
+                }
+                $document_name = $type . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+                $path = $file->storeAs("Employee_documents/$id", $document_name, 'public');
+                $oldpath = $exist->document_path;
+                $exist->update([
+                    'employee_id' => $id,
+                    'document_name' => $document_name,
+                    'document_path' => $path,
+                    'document_type' => $type,
+                    'uploaded_by' => Auth::id()
+                ]);
                 Storage::disk('public')->delete($oldpath);
-        }
-        DB::commit();
-        return response()->json([
-            'status' => true,
-            'message' => "All the documents updated successfully"
-        ]);
-        }
-        catch(\Exception $e){
+            }
+            DB::commit();
+            return response()->json([
+                'status' => true,
+                'message' => "All the documents updated successfully"
+            ]);
+        } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
-                'status'=>false,
-                'message'=>$e->getMessage()
-            ]);
+                'status' => false,
+                'mes' => 'Hi',
+                'message' => $e->getMessage()
+            ], 404);
         }
     }
 
@@ -175,23 +176,22 @@ class EmployeeDocument extends Controller
      */
     public function destroy(string $id)
     {
-        $documents =employee_document::where('employee_id',$id)->get();
-        if($documents->isEmpty()){{
-            return response()->json([
-                'status'=>false,
-                'message'=>"No documents found for this employee"
-            ],404);
+        $documents = employee_document::where('employee_id', $id)->get();
+        if ($documents->isEmpty()) { {
+                return response()->json([
+                    'status' => false,
+                    'message' => "No documents found for this employee"
+                ], 404);
+            }
         }
-        }
-        foreach($documents as $document){
+        foreach ($documents as $document) {
             Storage::disk('public')->delete($document->document_path);
-            employee_document::where('employee_id',$id)->where('document_type',$document->document_type)->delete();
+            employee_document::where('employee_id', $id)->where('document_type', $document->document_type)->delete();
         }
 
         return response()->json([
-            'status'=>true,
-            'message'=>'All documents deleted successfully for this employee '
+            'status' => true,
+            'message' => 'All documents deleted successfully for this employee '
         ]);
     }
-    
 }
