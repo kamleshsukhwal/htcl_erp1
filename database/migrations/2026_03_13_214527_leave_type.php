@@ -17,7 +17,7 @@ return new class extends Migration
             $table->integer('max_allowed_days');
             $table->boolean('accural_enabled')->default(true);
             $table->float('accrual_rate')->nullable();
-            $table->boolean('credit_forward_enabled')->default(false);
+            $table->boolean('carr_forward_enabled')->default(false);
             $table->boolean('is_paid')->default(true);
             $table->boolean('half_day_allowed')->default(true);
             $table->timestamps();
