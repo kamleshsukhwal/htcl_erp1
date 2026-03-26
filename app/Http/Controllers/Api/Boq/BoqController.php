@@ -190,7 +190,8 @@ public function itemsByBoq($boqId)
 }
 
 
-// 🔹 SHOW BOQ DETAILS WITH ITEMS AND FILES
+// 🔹 SHOW BOQ DETAILS WITH ITEMS AND FILES   cmted and added background color
+/*
 public function show($id)
 {
     $boq = Boq::with('files')->findOrFail($id);
@@ -215,6 +216,86 @@ public function show($id)
             DB::raw('(COALESCE(bp.executed_qty, 0) * bi.rate) as executed_amount'),
             DB::raw('((bi.quantity - COALESCE(bp.executed_qty, 0)) * bi.rate) as balance_amount')
         )
+        ->where('bi.boq_id', $id)
+        ->orderBy('bi.sn')
+        ->get();
+
+    return response()->json([
+        'status' => true,
+        'data' => [
+            'boq'   => $boq,
+            'items' => $items,
+            'files' => $boq->files
+        ]
+    ]);
+}*/
+public function show($id)
+{
+    $boq = Boq::with('files')->findOrFail($id);
+
+    $items = DB::table('boq_items as bi')
+
+        // ✅ Progress Subquery
+        ->leftJoinSub(
+            DB::table('boq_item_progress')
+                ->select(
+                    'boq_item_id',
+                    DB::raw('SUM(executed_qty) as executed_qty')
+                )
+                ->groupBy('boq_item_id'),
+            'bp',
+            'bp.boq_item_id',
+            '=',
+            'bi.id'
+        )
+
+        // ✅ Latest History Subquery (IMPORTANT CHANGE)
+        ->leftJoinSub(
+            DB::table('boq_item_histories as h1')
+                ->select('h1.boq_item_id', 'h1.old_quantity', 'h1.new_quantity')
+                ->whereRaw('h1.id = (
+                    SELECT MAX(h2.id)
+                    FROM boq_item_histories h2
+                    WHERE h2.boq_item_id = h1.boq_item_id
+                )'),
+            'bh',
+            'bh.boq_item_id',
+            '=',
+            'bi.id'
+        )
+
+        ->select(
+            'bi.*',
+
+            // ✅ Progress fields
+            DB::raw('COALESCE(bp.executed_qty, 0) as executed_qty'),
+            DB::raw('(bi.quantity - COALESCE(bp.executed_qty, 0)) as balance_qty'),
+            DB::raw('(COALESCE(bp.executed_qty, 0) * bi.rate) as executed_amount'),
+            DB::raw('((bi.quantity - COALESCE(bp.executed_qty, 0)) * bi.rate) as balance_amount'),
+
+            // ✅ Qty change tracking
+            'bh.old_quantity',
+            'bh.new_quantity',
+
+            DB::raw("
+                CASE 
+                    WHEN bh.new_quantity > bh.old_quantity THEN 'increased'
+                    WHEN bh.new_quantity < bh.old_quantity THEN 'decreased'
+                    WHEN bh.new_quantity = bh.old_quantity THEN 'same'
+                    ELSE 'no_history'
+                END as qty_change_type
+            "),
+
+            DB::raw("
+                CASE 
+                    WHEN bh.new_quantity > bh.old_quantity THEN '#d4edda' 
+                    WHEN bh.new_quantity < bh.old_quantity THEN '#f8d7da' 
+                    WHEN bh.new_quantity = bh.old_quantity THEN '#e2e3e5' 
+                    ELSE ''
+                END as item_bg_color
+            ")
+        )
+
         ->where('bi.boq_id', $id)
         ->orderBy('bi.sn')
         ->get();
