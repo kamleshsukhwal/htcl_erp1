@@ -10,13 +10,13 @@ class Employee_profile extends Model
     use HasFactory;
     protected $fillable=[
         'employee_id',
-        'aadhar_number',
-        'pan_number',
-        'employement_type',
-        'degree_name',
-        'college_name',
-        'year_of_passing',
-        'experience'
+        'Aadhar_Number',
+        'PAN_Number',
+        'Employement_Type',
+        'Degree_Name',
+        'College_Name',
+        'Year_of_passing',
+        'Experience'
     ];
 
     public function employee()

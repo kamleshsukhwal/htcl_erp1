@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Employee_profile;
 use App\Http\Controllers\Controller;
 use Illuminate\Validation\Rule;
-class EmployeeProfile extends Controller
+class EmployeeProfileController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -32,13 +32,13 @@ class EmployeeProfile extends Controller
         //Store the request data in database
         $validate = $request->validate([
             'employee_id' => 'required|exists:employees,id',
-            'Aadhar_Number' => 'required|string|max:12',
-            'PAN_Number' => 'required|string|max:10',
-            'Employement_Type' => 'required|string',
-            'Degree_Name' => 'required|string',
-            'College_Name' => 'required|string',
-            'Year_of_passing' => 'required|integer|min:1900|max:' . date('Y'),
-            'Experience' => 'nullable|integer|min:0'
+            'aadhar_number' => 'required|string|max:12',
+            'pan_number' => 'required|string|max:10',
+            'employement_type' => 'required|string',
+            'degree_name' => 'required|string',
+            'college_name' => 'required|string',
+            'year_of_passing' => 'required|integer|min:1900|max:' . date('Y'),
+            'experience' => 'nullable|integer|min:0'
         ]);
 
         Employee_profile::create($validate);
@@ -78,18 +78,18 @@ class EmployeeProfile extends Controller
             ],status:404);
         }
         $validate = $request->validate([
-            'Aadhar_Number' => [
+            'aadhar_number' => [
                 'required',
                 'string',
                 'size:12',
                 Rule::unique('employee_profiles')->ignore($employee->id)
             ],
-            'PAN_Number' => 'required|string|max:10',
-            'Employement_Type' => 'required|string',
-            'Degree_Name' => 'required|string',
-            'College_Name' => 'required|string',
-            'Year_of_passing' => 'required|integer|min:1900|max:' . date('Y'),
-            'Experience' => 'nullable|integer|min:0'
+            'pan_number' => 'required|string|max:10',
+            'employement_type' => 'required|string',
+            'degree_name' => 'required|string',
+            'college_name' => 'required|string',
+            'year_of_passing' => 'required|integer|min:1900|max:' . date('Y'),
+            'experience' => 'nullable|integer|min:0'
         ]);
         $employee->update($validate);
         return response()->json([

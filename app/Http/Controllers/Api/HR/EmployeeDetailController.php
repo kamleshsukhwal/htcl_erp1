@@ -31,7 +31,7 @@ class EmployeeDetailController extends Controller
     {
         $validated = $request->validate([
             'employee_id' => 'required|exists:employees,id|unique:employee_details,id',
-            'DOB' => 'required|date',
+            'dob' => 'required|date',
             'photo' => 'required|string',
             'address' => 'required|string',
             'bank_account_number' => 'required|string',
@@ -92,7 +92,7 @@ class EmployeeDetailController extends Controller
             ], status: 404);
         }
         $request->validate([
-            'DOB' => 'required|date',
+            'dob' => 'required|date',
             'photo' => 'required|string',
             'address' => 'required|string',
             'bank_account_number' => 'required|string',
