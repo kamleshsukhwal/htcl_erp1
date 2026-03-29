@@ -124,9 +124,9 @@ Route::post('/items/{itemId}/uploadFile', [BoqItemController::class, 'uploadItem
         Route::prefix('boq-files')->group(function () {
 
         // View file (open in browser)
-        Route::get('view/{id}', [BoqItemController::class, 'viewFile']);
+        Route::get('view/{id}', [BoqController::class, 'viewFile']);
         // Download file
-        Route::get('download/{id}', [ BoqItemController::class, 'downloadFile']);
+        Route::get('download/{id}', [BoqController::class, 'downloadFile']);
 
     });
     
