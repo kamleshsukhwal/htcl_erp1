@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\HR\EmployeeDocumentController;
 use App\Http\Controllers\Api\HR\AttendenceController;
 use App\Http\Controllers\Api\HR\LeaveTypeController;
 use App\Http\Controllers\Api\HR\LeaveApplicationController;
+use App\Http\Controllers\Api\HR\PublicHolidayController;
 // use App\Models\Employee_document;
 
 Route::prefix('hr')->group(function () {
@@ -79,8 +80,18 @@ Route::prefix('hr/leave_application')->group(function(){
     
     Route::get('/leave_type/{leave_type_id}',[LeaveApplicationController::class,'show_leave_type'])->middleware('auth:sanctum');
     
-    Route::put('/accept_or_reject/{leave_id}',[LeaveApplicationController::class,'Accpect_Reject_application'])->middleware('auth:sanctum');
+    Route::put('/accept_or_reject/{leave_id}',[LeaveApplicationController::class,'accept_or_reject_application'])->middleware('auth:sanctum');
    
     Route::get('/pending_applications/',[LeaveApplicationController::class,'show_pending_applications'])->middleware('auth:sanctum');
 
     });
+
+Route::prefix('hr/public_holiday')->group(function(){
+    Route::post('/',[PublicHolidayController::class,'store'])->middleware('auth:sanctum');
+    
+    Route::get('/{name}',[PublicHolidayController::class,'show'])->middleware('auth:sanctum');
+    
+    Route::put('/{id}',[PublicHolidayController::class,'update'])->middleware('auth:sanctum');
+    
+    Route::delete('/{id}',[PublicHolidayController::class,'destroy'])->middleware('auth:sanctum');
+});
