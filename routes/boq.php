@@ -129,6 +129,5 @@ Route::post('/items/{itemId}/uploadFile', [BoqItemController::class, 'uploadItem
         Route::get('download/{id}', [BoqController::class, 'downloadFile']);
 
     });
-    
-
+    Route::get('/movePublicToPrivate', [BoqController::class, 'movePublicToPrivate']);
     });
