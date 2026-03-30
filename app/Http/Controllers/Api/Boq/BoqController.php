@@ -681,39 +681,5 @@ $oldData = $file->toArray();
     }
 
     
-    public function movePublicToPrivate($fromFolder = '', $toFolder = '')
-    {
-        try {
-            // Get all files from public disk
-            $files = Storage::disk('public')->allFiles($fromFolder);
-
-            if (empty($files)) {
-                return "No files found to move";
-            }
-
-            foreach ($files as $file) {
-
-                // Define new path in private storage
-                $newPath = ($toFolder ? $toFolder.'/' : '') . $file;
-
-                // Ensure directory exists
-                Storage::disk('local')->makeDirectory(dirname($newPath));
-
-                // Move file (copy + delete)
-                Storage::disk('local')->put($newPath, Storage::disk('public')->get($file));
-
-                // Delete original file
-                // Storage::disk('public')->delete($file);
-            }
-
-            return count($files) . " files moved successfully";
-
-        } catch (\Exception $e) {
-
-            // Log error for debugging
-            dd('File move error: ' . $e->getMessage());
-
-            return "Error occurred: " . $e->getMessage();
-        }
-    }
+  
 }
