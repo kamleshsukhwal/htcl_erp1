@@ -256,7 +256,7 @@ public function getItemFiles($itemId)
 }
      public function viewFile($id)
     {
-        $file =BoqItemFile::where('boq_item_id' , $id)->orderBy('id','desc')->first();
+        $file =BoqItemFile::where('id' , $id)->orderBy('id','desc')->first();
 
         $path = Storage::disk('private')->path($file->file_path);
 
@@ -273,7 +273,7 @@ public function getItemFiles($itemId)
     // ✅ Download file
     public function downloadFile($id)
     {
-        $file = BoqItemFile::where('boq_item_id' , $id)->orderBy('id','desc')->first();
+        $file = BoqItemFile::where('id' , $id)->orderBy('id','desc')->first();
 
         if (!Storage::disk('private')->exists($file->file_path)) {
             return response()->json([
