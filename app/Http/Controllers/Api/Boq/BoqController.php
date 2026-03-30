@@ -12,18 +12,34 @@ use App\Models\BoqFile;
 use App\Models\Project;
 use App\imports\BoqItemsImport;
 use App\Imports\BoqItemsImport as ImportsBoqItemsImport;
+use App\Models\AuditLog;
 use App\Models\BoqItemHistory;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage; 
+use Illuminate\Support\Facades\Storage;
 
 class BoqController extends Controller
 {
 
+/****** Store audit Log */
 
-public function index()
+private function logAudit($module, $recordId, $action, $oldData = null, $newData = null)
 {
-    return Boq::latest()->get();
+    AuditLog::create([
+        'module_name' => $module,
+        'record_id'   => $recordId,
+        'action'      => $action,
+        'old_data'    => $oldData ? json_encode($oldData) : null,
+        'new_data'    => $newData ? json_encode($newData) : null,
+        'performed_by'=> auth()->id() ?? 0,
+    ]);
 }
+
+
+/*** audit log end */
+    public function index()
+    {
+        return Boq::latest()->get();
+    }
 
     // 🔹 LIST BOQS BY PROJECT
     public function listByProject(Request $request, $projectId)
@@ -68,6 +84,8 @@ public function index()
             'status' => true,
             'data' => $boq
         ], 201);
+
+        $this->logAudit('BOQ', $boq->id, 'CREATE', null, $boq->toArray());
     }
 
     // 🔹 ADD BOQ ITEMS (BULK)
@@ -98,6 +116,8 @@ public function index()
             'status' => true,
             'message' => 'BOQ items added successfully'
         ]);
+
+        $this->logAudit('BOQ_ITEM', $item->id, 'CREATE', null, $item->toArray());
     }
 
     // 🔹 UPDATE BOQ ITEM
@@ -114,7 +134,7 @@ public function index()
             'approved_make'  => 'sometimes|nullable|string',
             'offered_make'   => 'sometimes|nullable|string',
         ]);
-
+$oldData = $item->toArray();
         $item->update([
             'sn' => $request->sn,
             'description' => $request->description,
@@ -132,6 +152,9 @@ public function index()
             'message' => 'BOQ item updated successfully',
             'data' => $item
         ]);
+//$oldData = $item->toArray();
+
+        $this->logAudit('BOQ_ITEM', $item->id, 'UPDATE', $oldData, $item->fresh()->toArray());
     }
 
 
@@ -140,9 +163,9 @@ public function index()
     {
         $item = BoqItem::findOrFail($itemId);
         $boqId = $item->boq_id;
-
+$oldData = $item->toArray();
         $item->delete();
-
+$this->logAudit('BOQ_ITEM', $itemId, 'DELETE', $oldData, null);
         $this->recalculateBoqAndProject($boqId);
 
         return response()->json([
@@ -157,7 +180,7 @@ public function index()
         $request->validate([
             'status' => 'required|in:draft,submitted,approved'
         ]);
-
+  $oldData = $boq->toArray();
         Boq::where('id', $boqId)->update([
             'status' => $request->status
         ]);
@@ -166,8 +189,11 @@ public function index()
             'status' => true,
             'message' => 'BOQ status updated' // update item  file
         ]);
+
+
+$this->logAudit('BOQ', $boqId, 'STATUS_UPDATE', $oldData, $boq->fresh()->toArray());
     }
-/// BOQ item upload from file.
+    /// BOQ item upload from file.
 
 
 
@@ -176,22 +202,22 @@ public function index()
 
 
 
-// JSON upload
-public function itemsByBoq($boqId)
-{
-    $items = BoqItem::where('boq_id', $boqId)
-        ->orderBy('sn')
-        ->get(); ///  file lock by admin
+    // JSON upload
+    public function itemsByBoq($boqId)
+    {
+        $items = BoqItem::where('boq_id', $boqId)
+            ->orderBy('sn')
+            ->get(); ///  file lock by admin
 
-    return response()->json([
-        'status' => true,
-        'data' => $items
-    ]);
-}
+        return response()->json([
+            'status' => true,
+            'data' => $items
+        ]);
+    }
 
 
-// 🔹 SHOW BOQ DETAILS WITH ITEMS AND FILES   cmted and added background color
-/*
+    // 🔹 SHOW BOQ DETAILS WITH ITEMS AND FILES   cmted and added background color
+    /*
 public function show($id)
 {
     $boq = Boq::with('files')->findOrFail($id);
@@ -229,55 +255,55 @@ public function show($id)
         ]
     ]);
 }*/
-public function show($id)
-{
-    $boq = Boq::with('files')->findOrFail($id);
+    public function show($id)
+    {
+        $boq = Boq::with('files')->findOrFail($id);
 
-    $items = DB::table('boq_items as bi')
+        $items = DB::table('boq_items as bi')
 
-        // ✅ Progress Subquery
-        ->leftJoinSub(
-            DB::table('boq_item_progress')
-                ->select(
-                    'boq_item_id',
-                    DB::raw('SUM(executed_qty) as executed_qty')
-                )
-                ->groupBy('boq_item_id'),
-            'bp',
-            'bp.boq_item_id',
-            '=',
-            'bi.id'
-        )
+            // ✅ Progress Subquery
+            ->leftJoinSub(
+                DB::table('boq_item_progress')
+                    ->select(
+                        'boq_item_id',
+                        DB::raw('SUM(executed_qty) as executed_qty')
+                    )
+                    ->groupBy('boq_item_id'),
+                'bp',
+                'bp.boq_item_id',
+                '=',
+                'bi.id'
+            )
 
-        // ✅ Latest History Subquery (IMPORTANT CHANGE)
-        ->leftJoinSub(
-            DB::table('boq_item_histories as h1')
-                ->select('h1.boq_item_id', 'h1.old_quantity', 'h1.new_quantity')
-                ->whereRaw('h1.id = (
+            // ✅ Latest History Subquery (IMPORTANT CHANGE)
+            ->leftJoinSub(
+                DB::table('boq_item_histories as h1')
+                    ->select('h1.boq_item_id', 'h1.old_quantity', 'h1.new_quantity')
+                    ->whereRaw('h1.id = (
                     SELECT MAX(h2.id)
                     FROM boq_item_histories h2
                     WHERE h2.boq_item_id = h1.boq_item_id
                 )'),
-            'bh',
-            'bh.boq_item_id',
-            '=',
-            'bi.id'
-        )
+                'bh',
+                'bh.boq_item_id',
+                '=',
+                'bi.id'
+            )
 
-        ->select(
-            'bi.*',
+            ->select(
+                'bi.*',
 
-            // ✅ Progress fields
-            DB::raw('COALESCE(bp.executed_qty, 0) as executed_qty'),
-            DB::raw('(bi.quantity - COALESCE(bp.executed_qty, 0)) as balance_qty'),
-            DB::raw('(COALESCE(bp.executed_qty, 0) * bi.rate) as executed_amount'),
-            DB::raw('((bi.quantity - COALESCE(bp.executed_qty, 0)) * bi.rate) as balance_amount'),
+                // ✅ Progress fields
+                DB::raw('COALESCE(bp.executed_qty, 0) as executed_qty'),
+                DB::raw('(bi.quantity - COALESCE(bp.executed_qty, 0)) as balance_qty'),
+                DB::raw('(COALESCE(bp.executed_qty, 0) * bi.rate) as executed_amount'),
+                DB::raw('((bi.quantity - COALESCE(bp.executed_qty, 0)) * bi.rate) as balance_amount'),
 
-            // ✅ Qty change tracking
-            'bh.old_quantity',
-            'bh.new_quantity',
+                // ✅ Qty change tracking
+                'bh.old_quantity',
+                'bh.new_quantity',
 
-            DB::raw("
+                DB::raw("
                 CASE 
                     WHEN bh.new_quantity > bh.old_quantity THEN 'increased'
                     WHEN bh.new_quantity < bh.old_quantity THEN 'decreased'
@@ -286,7 +312,7 @@ public function show($id)
                 END as qty_change_type
             "),
 
-            DB::raw("
+                DB::raw("
                 CASE 
                     WHEN bh.new_quantity > bh.old_quantity THEN '#d4edda' 
                     WHEN bh.new_quantity < bh.old_quantity THEN '#f8d7da' 
@@ -294,28 +320,28 @@ public function show($id)
                     ELSE ''
                 END as item_bg_color
             ")
-        )
+            )
 
-        ->where('bi.boq_id', $id)
-        ->orderBy('bi.sn')
-        ->get();
+            ->where('bi.boq_id', $id)
+            ->orderBy('bi.sn')
+            ->get();
 
-    return response()->json([
-        'status' => true,
-        'data' => [
-            'boq'   => $boq,
-            'items' => $items,
-            'files' => $boq->files
-        ]
-    ]);
-}
+        return response()->json([
+            'status' => true,
+            'data' => [
+                'boq'   => $boq,
+                'items' => $items,
+                'files' => $boq->files
+            ]
+        ]);
+    }
 
 
 
-public function getBoqById($id)
-{
-    return $this->show($id);
-}
+    public function getBoqById($id)
+    {
+        return $this->show($id);
+    }
 
 
 
@@ -339,13 +365,18 @@ public function getBoqById($id)
             'file_type'  => $file->getClientOriginalExtension(), // should be .csv or .excel, .xls
             'uploaded_by' => Auth::id()
 
-          
+
         ]);
 
         return response()->json([
             'status' => true,
             'message' => 'File uploaded successfully'
         ]);
+
+        $this->logAudit('BOQ_FILE', $boqId, 'UPLOAD', null, [
+    'file_name' => $fileName,
+    'path' => $path
+]);
     }
     public function getItemsByBoq($boqId)
     {
@@ -361,9 +392,9 @@ public function getBoqById($id)
     // 🔁 COMMON FUNCTION – RECALCULATE TOTALS
     private function recalculateBoqAndProject($boqId)
     {
-      //  $boqTotal = BoqItem::where('boq_id', $boqId)->sum('total_amount');
-$boqTotal = BoqItem::where('boq_id', $boqId)
-    ->sum(DB::raw('quantity * rate'));
+        //  $boqTotal = BoqItem::where('boq_id', $boqId)->sum('total_amount');
+        $boqTotal = BoqItem::where('boq_id', $boqId)
+            ->sum(DB::raw('quantity * rate'));
         $boq = Boq::find($boqId);
         $boq->update(['total_amount' => $boqTotal]);
 
@@ -374,230 +405,214 @@ $boqTotal = BoqItem::where('boq_id', $boqId)
         ]);
     }
 
-/*  code is working but to make history commented*/
+    /*  code is working but to make history commented*/
     public function bulkUpdateItems(Request $request, $boqId)
-{
-    $request->validate([
-        'items' => 'required|array|min:1',
-        'items.*.id' => 'required|exists:boq_items,id',
-        'items.*.quantity' => 'nullable|numeric',
-        'items.*.rate' => 'nullable|numeric',
-    ]);
-
-    DB::transaction(function () use ($request, $boqId) {
-
-        foreach ($request->items as $row) {
-
-            $item = BoqItem::where('id', $row['id'])
-                ->where('boq_id', $boqId)
-                ->firstOrFail();
-
-            $quantity = $row['quantity'] ?? $item->quantity;
-            $rate     = $row['rate'] ?? $item->rate;
-
-           $item->update([
-    'sn' => $request->sn,
-    'description' => $request->description,
-    'unit' => $request->unit,
-    'quantity' => $request->quantity,
-    'rate' => $request->rate,
-    'total_amount' => $request->quantity * $request->rate,
-    'scope' => $request->scope,
-    'approved_make' => $request->approved_make,
-    'offered_make' => $request->offered_make,
-]);
-
-$this->recalculateBoqAndProject($item->boq_id);
-        }
-
-       // $this->recalculateBoqAndProject($boqId);
-    });
-
-    return response()->json([
-        'status' => true,
-        'message' => 'BOQ items updated successfully'
-    ]);
-}
- 
-public function importBoq(Request $request, Boq $boq)
-{
-    $request->validate([
-        'file' => 'required|file|mimes:xlsx,csv'
-    ]);
-
-    // Store file
-    $path = $request->file('file')->store('imports');
-
-    // Absolute path
-    $fullPath = storage_path('app/' . $path);
-
-    // 🔍 Debug safety check
-    if (!file_exists($fullPath)) {
-        logger()->error('File not saved', [
-            'path' => $fullPath
-        ]);
-        return response()->json(['error' => 'File upload failed'], 500);
-    }
-
-    (new ImportsBoqItemsImport())->import($fullPath, $boq->id);
-
-    return response()->json([
-        'status' => true,
-        'message' => 'BOQ imported successfully'
-    ]);
-}
-
-/**** bulk update */
-public function bulkUpdate(Request $request)
-{
-    DB::transaction(function () use ($request) {
-
-        foreach ($request->items as $item) {
-
-            $boqItem = BoqItem::findOrFail($item['id']);
-
-            // 1️⃣ Store history
-            BoqItemHistory::create([
-                'boq_item_id' => $boqItem->id,
-                'boq_id'      => $boqItem->boq_id,
-                'old_quantity'=> $boqItem->quantity,
-                'new_quantity'=> $item['quantity'],
-                'old_rate'    => $boqItem->rate,
-                'new_rate'    => $item['rate'] ?? $boqItem->rate,
-                //'changed_by'  => auth()->id(), // change when project live
-                'changed_by'  => '1',
-                'change_reason' => 'Manual BOQ edit'
-            ]);
-
-            // 2️⃣ Update live BOQ item
-            $boqItem->update([
-                'quantity' => $item['quantity'],
-                'rate'     => $item['rate'] ?? $boqItem->rate,
-                'amount'   => $item['quantity'] * ($item['rate'] ?? $boqItem->rate)
-            ]);
-        }
-    });
-
-    return response()->json([
-        'message' => 'BOQ items updated successfully'
-    ]);
-}
-
-/*
-public function viewFile($id)
-{
-    $file = BoqFile::findOrFail($id);
-
-    $path = $file->file_path;
-
-    if (!Storage::exists($path)) {
-        abort(404, 'File not found');
-    }
-
-    // 🔒 Optional security (VERY IMPORTANT)
-    // Check if user has access to this BOQ
-    // if (auth()->user()->project_id != $file->boq->project_id) {
-    //     abort(403, 'Unauthorized');
-    // }
-
-    return response()->file(storage_path('app/' . $path));
-}*/
-/**** for dashboard usage */
-
-
-public function status($boq_id)
-{
-    // 1️⃣ Planned Quantity (BOQ)
-    $plannedQty = DB::table('boq_items')
-        ->where('boq_id', $boq_id)
-        ->sum('quantity');
-
-    // 2️⃣ Ordered Quantity (PO)
-    $orderedQty = DB::table('purchase_order_items')
-        ->join('boq_items', 'boq_items.id', '=', 'purchase_order_items.boq_item_id')
-        ->where('boq_items.boq_id', $boq_id)
-        ->sum('purchase_order_items.ordered_qty');
-
-    // 3️⃣ Received Quantity (DC IN)
-    $receivedQty = DB::table('dc_in_items')
-        ->join('boq_items', 'boq_items.id', '=', 'dc_in_items.boq_item_id')
-        ->where('boq_items.boq_id', $boq_id)
-        ->sum('dc_in_items.supplied_qty');
-
-    // 4️⃣ Issued Quantity (DC OUT)
-    $issuedQty = DB::table('dc_out_items')
-        ->join('boq_items', 'boq_items.id', '=', 'dc_out_items.boq_item_id')
-        ->where('boq_items.boq_id', $boq_id)
-        ->sum('dc_out_items.issued_qty');
-
-    // 5️⃣ Executed Quantity (Installation)
-    $executedQty = DB::table('installations')
-        ->where('boq_id', $boq_id)
-        ->sum('executed_qty');
-
-    return response()->json([
-        'boq_id'        => $boq_id,
-        'planned_qty'   => $plannedQty ?? 0,
-        'ordered_qty'   => $orderedQty ?? 0,
-        'received_qty'  => $receivedQty ?? 0,
-        'issued_qty'    => $issuedQty ?? 0,
-        'executed_qty'  => $executedQty ?? 0,
-        'balance_qty'   => ($plannedQty ?? 0) - ($executedQty ?? 0),
-        'stock_available' => ($receivedQty ?? 0) - ($issuedQty ?? 0),
-    ]);
-}
-
-
-
-/**** get header fies**/
-
-public function getBoqFiles($boqId)
-{
-    $files = BoqFile::where('boq_id', $boqId)->get();
-
-    return response()->json([
-        'status' => true,
-        'count' => $files->count(),
-        'data' => $files
-    ]);
-}
-
- public function deleteFile($id)
-{
-    $file = BoqFile::findOrFail($id);
-
-    $path = $file->file_path;
-
-    // 🔒 Optional: check permission
-    // if (auth()->user()->project_id != $file->boq->project_id) {
-    //     return response()->json(['message' => 'Unauthorized'], 403);
-    // }
-
-    // 🚫 Prevent delete if BOQ approved (optional)
-    if ($file->boq && $file->boq->status === 'approved') {
-        return response()->json([
-            'status' => false,
-            'message' => 'Cannot delete file from approved BOQ'
-        ], 403);
-    }
-
-    // 🗑️ Delete file from storage
-    if (Storage::disk('local')->exists($path)) {
-        Storage::disk('local')->delete($path);
-    }
-
-    // 🧾 Soft delete from DB
-    $file->delete();
-
-    return response()->json([
-        'status' => true,
-        'message' => 'File deleted successfully'
-    ]);
-}
-
-     public function viewFile($id)
     {
-        $file =BoqFile::where('boq_id' , $id)->orderBy('id','desc')->first();
+        $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'required|exists:boq_items,id',
+            'items.*.quantity' => 'nullable|numeric',
+            'items.*.rate' => 'nullable|numeric',
+        ]);
+       
+
+        DB::transaction(function () use ($request, $boqId) {
+
+            foreach ($request->items as $row) {
+
+                $item = BoqItem::where('id', $row['id'])
+                    ->where('boq_id', $boqId)
+                    ->firstOrFail();
+ $oldData = $item->toArray();
+                $quantity = $row['quantity'] ?? $item->quantity;
+                $rate     = $row['rate'] ?? $item->rate;
+
+                $item->update([
+                    'sn' => $request->sn,
+                    'description' => $request->description,
+                    'unit' => $request->unit,
+                    'quantity' => $request->quantity,
+                    'rate' => $request->rate,
+                    'total_amount' => $request->quantity * $request->rate,
+                    'scope' => $request->scope,
+                    'approved_make' => $request->approved_make,
+                    'offered_make' => $request->offered_make,
+                ]);
+$this->logAudit('BOQ_ITEM', $item->id, 'BULK_UPDATE', $oldData, $item->fresh()->toArray());
+                $this->recalculateBoqAndProject($item->boq_id);
+            }
+
+            // $this->recalculateBoqAndProject($boqId);
+        });
+
+        return response()->json([
+            'status' => true,
+            'message' => 'BOQ items updated successfully'
+        ]);
+    }
+
+    public function importBoq(Request $request, Boq $boq)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,csv'
+        ]);
+
+        // Store file
+        $path = $request->file('file')->store('imports');
+
+        // Absolute path
+        $fullPath = storage_path('app/' . $path);
+
+        // 🔍 Debug safety check
+        if (!file_exists($fullPath)) {
+            logger()->error('File not saved', [
+                'path' => $fullPath
+            ]);
+            return response()->json(['error' => 'File upload failed'], 500);
+        }
+
+        (new ImportsBoqItemsImport())->import($fullPath, $boq->id);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'BOQ imported successfully'
+        ]);
+    }
+
+    /**** bulk update */
+    public function bulkUpdate(Request $request)
+    {
+        DB::transaction(function () use ($request) {
+
+            foreach ($request->items as $item) {
+
+                $boqItem = BoqItem::findOrFail($item['id']);
+
+                // 1️⃣ Store history
+                BoqItemHistory::create([
+                    'boq_item_id' => $boqItem->id,
+                    'boq_id'      => $boqItem->boq_id,
+                    'old_quantity' => $boqItem->quantity,
+                    'new_quantity' => $item['quantity'],
+                    'old_rate'    => $boqItem->rate,
+                    'new_rate'    => $item['rate'] ?? $boqItem->rate,
+                    //'changed_by'  => auth()->id(), // change when project live
+                    'changed_by'  => '1',
+                    'change_reason' => 'Manual BOQ edit'
+                ]);
+
+                // 2️⃣ Update live BOQ item
+                $boqItem->update([
+                    'quantity' => $item['quantity'],
+                    'rate'     => $item['rate'] ?? $boqItem->rate,
+                    'amount'   => $item['quantity'] * ($item['rate'] ?? $boqItem->rate)
+                ]);
+            }
+        });
+
+        return response()->json([
+            'message' => 'BOQ items updated successfully'
+        ]);
+    }
+
+    /**** for dashboard usage */
+
+
+    public function status($boq_id)
+    {
+        // 1️⃣ Planned Quantity (BOQ)
+        $plannedQty = DB::table('boq_items')
+            ->where('boq_id', $boq_id)
+            ->sum('quantity');
+
+        // 2️⃣ Ordered Quantity (PO)
+        $orderedQty = DB::table('purchase_order_items')
+            ->join('boq_items', 'boq_items.id', '=', 'purchase_order_items.boq_item_id')
+            ->where('boq_items.boq_id', $boq_id)
+            ->sum('purchase_order_items.ordered_qty');
+
+        // 3️⃣ Received Quantity (DC IN)
+        $receivedQty = DB::table('dc_in_items')
+            ->join('boq_items', 'boq_items.id', '=', 'dc_in_items.boq_item_id')
+            ->where('boq_items.boq_id', $boq_id)
+            ->sum('dc_in_items.supplied_qty');
+
+        // 4️⃣ Issued Quantity (DC OUT)
+        $issuedQty = DB::table('dc_out_items')
+            ->join('boq_items', 'boq_items.id', '=', 'dc_out_items.boq_item_id')
+            ->where('boq_items.boq_id', $boq_id)
+            ->sum('dc_out_items.issued_qty');
+
+        // 5️⃣ Executed Quantity (Installation)
+        $executedQty = DB::table('installations')
+            ->where('boq_id', $boq_id)
+            ->sum('executed_qty');
+
+        return response()->json([
+            'boq_id'        => $boq_id,
+            'planned_qty'   => $plannedQty ?? 0,
+            'ordered_qty'   => $orderedQty ?? 0,
+            'received_qty'  => $receivedQty ?? 0,
+            'issued_qty'    => $issuedQty ?? 0,
+            'executed_qty'  => $executedQty ?? 0,
+            'balance_qty'   => ($plannedQty ?? 0) - ($executedQty ?? 0),
+            'stock_available' => ($receivedQty ?? 0) - ($issuedQty ?? 0),
+        ]);
+    }
+
+
+
+    /**** get header fies**/
+
+    public function getBoqFiles($boqId)
+    {
+        $files = BoqFile::where('boq_id', $boqId)->get();
+
+        return response()->json([
+            'status' => true,
+            'count' => $files->count(),
+            'data' => $files
+        ]);
+    }
+
+    public function deleteFile($id)
+    {
+        $file = BoqFile::findOrFail($id);
+$oldData = $file->toArray();
+        $path = $file->file_path;
+
+        // 🔒 Optional: check permission
+        // if (auth()->user()->project_id != $file->boq->project_id) {
+        //     return response()->json(['message' => 'Unauthorized'], 403);
+        // }
+
+        // 🚫 Prevent delete if BOQ approved (optional)
+        if ($file->boq && $file->boq->status === 'approved') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Cannot delete file from approved BOQ'
+            ], 403);
+        }
+
+        // 🗑️ Delete file from storage
+        if (Storage::disk('local')->exists($path)) {
+            Storage::disk('local')->delete($path);
+        }
+
+        // 🧾 Soft delete from DB
+        $file->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'File deleted successfully'
+        ]);
+
+        $this->logAudit('BOQ_FILE', $id, 'DELETE', $oldData, null);
+    }
+
+    public function viewFile($id)
+    {
+        $file = BoqFile::where('boq_id', $id)->orderBy('id', 'desc')->first();
 
         $path = Storage::disk('private')->path($file->file_path);
 
@@ -614,7 +629,7 @@ public function getBoqFiles($boqId)
     // ✅ Download file
     public function downloadFile($id)
     {
-        $file = BoqFile::where('boq_id' , $id)->orderBy('id','desc')->first();
+        $file = BoqFile::where('boq_id', $id)->orderBy('id', 'desc')->first();
 
         if (!Storage::disk('private')->exists($file->file_path)) {
             return response()->json([
@@ -629,6 +644,43 @@ public function getBoqFiles($boqId)
         );
     }
 
+    public function movePublicToPrivate($fromFolder = '', $toFolder = '')
+    {
+        try {
+            // Get all files from public disk
+            $files = Storage::disk('public')->allFiles($fromFolder);
+
+            if (empty($files)) {
+                return "No files found to move";
+            }
+
+            foreach ($files as $file) {
+
+                // Define new path in private storage
+                $newPath = ($toFolder ? $toFolder.'/' : '') . $file;
+
+                // Ensure directory exists
+                Storage::disk('local')->makeDirectory(dirname($newPath));
+
+                // Move file (copy + delete)
+                Storage::disk('local')->put($newPath, Storage::disk('public')->get($file));
+
+                // Delete original file
+                // Storage::disk('public')->delete($file);
+            }
+
+            return count($files) . " files moved successfully";
+
+        } catch (\Exception $e) {
+
+            // Log error for debugging
+            dd('File move error: ' . $e->getMessage());
+
+            return "Error occurred: " . $e->getMessage();
+        }
+    }
+
+    
     public function movePublicToPrivate($fromFolder = '', $toFolder = '')
     {
         try {
