@@ -3,7 +3,8 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use App\Models\LeaveApplication;
+use App\Models\LeaveBalance;
 class LeaveType extends Model
 {
     use HasFactory;
@@ -19,5 +20,11 @@ class LeaveType extends Model
         'half_day_allowed'
     ];
 
+    public function leaveApplication(){
+        return $this->hasMany(LeaveApplication::class,'leave_type_id');
+    }
 
+     public function leave_balance(){
+        return $this->hasMany(LeaveBalance::class,'leave_type_id');
+    }
 }
