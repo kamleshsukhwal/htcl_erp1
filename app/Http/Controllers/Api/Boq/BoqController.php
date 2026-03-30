@@ -612,7 +612,7 @@ $oldData = $file->toArray();
 
     public function viewFile($id)
     {
-        $file = BoqFile::where('boq_id', $id)->orderBy('id', 'desc')->first();
+        $file = BoqFile::where('id', $id)->orderBy('id', 'desc')->first();
 
         $path = Storage::disk('private')->path($file->file_path);
 
@@ -629,7 +629,7 @@ $oldData = $file->toArray();
     // ✅ Download file
     public function downloadFile($id)
     {
-        $file = BoqFile::where('boq_id', $id)->orderBy('id', 'desc')->first();
+        $file = BoqFile::where('id', $id)->orderBy('id', 'desc')->first();
 
         if (!Storage::disk('private')->exists($file->file_path)) {
             return response()->json([
