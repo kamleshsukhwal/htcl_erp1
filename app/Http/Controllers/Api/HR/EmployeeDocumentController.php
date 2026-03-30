@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 
-class EmployeeDocument extends Controller
+class EmployeeDocumentController extends Controller
 {
     /**
      * Display a listing of the resource.

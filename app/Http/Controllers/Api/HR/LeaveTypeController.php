@@ -74,7 +74,6 @@ class LeaveTypeController extends Controller
             "data"=>$exist
         ]);
     }
-
     /**
      * Show the form for editing the specified resource.
      */

@@ -11,16 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('employee_details', function (Blueprint $table) {
+        Schema::create('leave_balance',function(Blueprint $table)
+        {
             $table->id();
+            
             $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade');
-            $table->date('dob');
-            $table->string('photo');
-            $table->string('address');
-            $table->string('bank_account_number');
-            $table->string('bank_name');
-            $table->string('ifsc_code');
-            $table->string('contact_number');
+
+            $table->foreignId('leave_type_id')->constrained('leave_type')->onDelete('cascade');
+            $table->integer('max_allowed');
+            $table->integer('used_leave');
             $table->timestamps();
         });
     }
@@ -30,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('employee_deatils');
+        Schema::dropIfExists('leave_balance');
     }
 };

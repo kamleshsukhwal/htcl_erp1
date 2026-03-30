@@ -8,6 +8,7 @@ use App\Models\Employee_detail;
 use App\Models\Employee_profile;
 use App\Models\Employee_document;
 use App\Models\Attendence;
+use App\Models\LeaveApplication;
 class Employee extends Model
 {
     /** @use HasFactory<\Database\Factories\EmployeeFactory> */
@@ -37,5 +38,9 @@ class Employee extends Model
 
     public function attendence(){
         return $this->hasMany(Attendence::class,'employee_id');
+    }
+
+    public function leaveApplication(){
+        return $this->hasMany(LeaveApplication::class,'employee_id');
     }
 }
