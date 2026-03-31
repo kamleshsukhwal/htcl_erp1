@@ -13,7 +13,6 @@ use App\Models\BoqItemFile;
 use App\Models\BoqFile;
 use Illuminate\Support\Facades\Storage;
 
-
 class BoqItemController extends Controller
 {
     /**
@@ -39,8 +38,13 @@ class BoqItemController extends Controller
                 $oldRate = $item->rate;
 
                 // 🟢 New values (fallback to old)
+                /*
                 $newQty  = $row['quantity'] ?? $item->quantity;
-                $newRate = $row['rate'] ?? $item->rate;
+                
+                $newRate = $row['rate'] ?? $item->rate; */
+
+                $newQty  = isset($row['new_quantity']) ? $row['new_quantity'] : ($row['quantity'] ?? $item->quantity);
+$newRate = isset($row['new_rate']) ? $row['new_rate'] : ($row['rate'] ?? $item->rate);
 
                 // ✅ Store history ONLY if changed
                 if ($oldQty != $newQty || $oldRate != $newRate) {
@@ -150,8 +154,6 @@ public function historyByDate(Request $request)
     ]);
 }
 
-
- 
 public function uploadItemFile(Request $request, $itemId)
 {
     $request->validate([
@@ -200,7 +202,9 @@ public function getItemFiles($itemId)
 
 
 
-    /**** Store BOQ items */ public function store(Request $request, $boqId)
+    /**** Store BOQ items */ 
+    
+    public function store(Request $request, $boqId)
 {
     $request->validate([
         'items' => 'required|array|min:1',

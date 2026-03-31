@@ -8,8 +8,7 @@ class BoqFile extends Model
 {
 
     use softDeletes;
-
-    
+   
     protected $fillable = [
         'boq_id',
         'file_name',
