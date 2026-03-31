@@ -12,7 +12,7 @@ class BoqItemProgress extends Model
       //  'dc_no',
         'executed_qty',
         'entry_date',
-        'remarks'
+        'remarks'    
     ];
 
 
