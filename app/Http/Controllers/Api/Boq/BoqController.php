@@ -331,7 +331,19 @@ public function show($id)
             'data' => [
                 'boq'   => $boq,
                 'items' => $items,
-                'files' => $boq->files
+               // 'files' => $boq->files
+
+               'files' => $boq->files->map(function ($file) {
+    return [
+        'id' => $file->id,
+        'file_name' => $file->file_name,
+
+        // ✅ IMPORTANT FIX
+        'file_url' => url('/api/boq/boq-files/view/' . $file->id),
+
+        'download_url' => url('/api/boq/boq-files/download/' . $file->id)
+    ];
+})
             ]
         ]);
     }
