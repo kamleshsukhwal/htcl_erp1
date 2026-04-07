@@ -255,6 +255,8 @@ public function show($id)
         ]
     ]);
 }*/
+
+
     public function show($id)
     {
         $boq = Boq::with('files')->findOrFail($id);
@@ -290,7 +292,9 @@ public function show($id)
                 'bi.id'
             )
 
-            ->select(
+        
+            /*
+            select(
                 'bi.*',
 
                 // ✅ Progress fields
@@ -310,8 +314,34 @@ public function show($id)
                     WHEN bh.new_quantity = bh.old_quantity THEN 'same'
                     ELSE 'no_history'
                 END as qty_change_type
-            "),
+            "),*/
 
+
+
+
+            ->select(
+    'bi.*',
+    'bi.item_code', // ✅ add this
+
+    // ✅ FINAL QTY (MAIN FIX)
+    DB::raw('COALESCE(bh.new_quantity, bi.quantity) as final_quantity'),
+
+    // ✅ Progress fields (use final quantity here also)
+    DB::raw('COALESCE(bp.executed_qty, 0) as executed_qty'),
+    DB::raw('(COALESCE(bh.new_quantity, bi.quantity) - COALESCE(bp.executed_qty, 0)) as balance_qty'),
+    DB::raw('(COALESCE(bp.executed_qty, 0) * bi.rate) as executed_amount'),
+    DB::raw('((COALESCE(bh.new_quantity, bi.quantity) - COALESCE(bp.executed_qty, 0)) * bi.rate) as balance_amount'),
+
+    // OPTIONAL: keep for UI highlight
+    DB::raw("
+        CASE 
+            WHEN bh.new_quantity > bh.old_quantity THEN 'increased'
+            WHEN bh.new_quantity < bh.old_quantity THEN 'decreased'
+            WHEN bh.new_quantity = bh.old_quantity THEN 'same'
+            ELSE 'no_history'
+        END as qty_change_type
+    "),
+    
                 DB::raw("
                 CASE 
                     WHEN bh.new_quantity > bh.old_quantity THEN '#d4edda' 

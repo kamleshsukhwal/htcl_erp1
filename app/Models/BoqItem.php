@@ -16,6 +16,7 @@ class BoqItem extends Model
     'rate',
     'total_amount',
     'scope',
+    'item_code',
     'approved_make',
     'offered_make'
 ];
