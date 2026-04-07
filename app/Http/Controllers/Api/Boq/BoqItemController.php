@@ -212,7 +212,7 @@ public function getItemFiles($itemId)
         'items.*.item_name'     => 'required|string|max:255',
         'items.*.quantity'      => 'required|numeric|min:0',
         'items.*.rate'          => 'required|numeric|min:0',
-
+       
         'items.*.sn'            => 'nullable|string|max:50',
         'items.*.description'   => 'nullable|string',
         'items.*.unit'          => 'nullable|string|max:50',
@@ -240,6 +240,7 @@ public function getItemFiles($itemId)
                 'rate'          => $rate,
                 'total_amount'  => $qty * $rate, // ✅ backend calculation
                 'scope'         => $row['scope'] ?? null,
+               // 'item_code'     => $row['item_code'] ?? null,
                 'approved_make' => $row['approved_make'] ?? null,
                 'offered_make'  => $row['offered_make'] ?? null,
             ]);
@@ -291,4 +292,40 @@ public function getItemFiles($itemId)
             $file->file_name
         );
     }
+
+
+#update item code
+ public function updateItemCode(Request $request, $id)
+{
+    $request->validate([
+        'item_code' => 'required|string|max:50'
+    ]);
+
+    $item = BoqItem::findOrFail($id);
+
+    $oldData = $item->toArray(); // for audit (optional)
+
+    $item->update([
+        'item_code' => $request->item_code
+    ]);
+
+    // Optional Audit Log
+    DB::table('audit_logs')->insert([
+        'module_name' => 'BOQ_ITEM',
+        'record_id'   => $item->id,
+        'action'      => 'UPDATE_ITEM_CODE',
+        'old_data'    => json_encode($oldData),
+        'new_data'    => json_encode($item->fresh()),
+        'performed_by'=> auth()->id() ?? 0,
+        'created_at'  => now(),
+        'updated_at'  => now()
+    ]);
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Item code updated successfully',
+        'data' => $item
+    ]);
+
+}
 }
