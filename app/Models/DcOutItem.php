@@ -12,8 +12,9 @@ use Illuminate\Database\Eloquent\Model;
         'issued_qty'
     ];
 
+   
     public function boqItem()
-    {
-        return $this->belongsTo(BoqItem::class);
-    }
+{
+    return $this->belongsTo(BoqItem::class, 'boq_item_id');
+}
 }

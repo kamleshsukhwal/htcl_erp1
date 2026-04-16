@@ -17,6 +17,9 @@ use App\Http\Controllers\Api\Inventory\DcInController;
 // Execution
 use App\Http\Controllers\Api\Execution\InstallationController;
 use App\Http\Controllers\Api\Project\ProjectAttachmentController;
+// finance
+use App\Http\Controllers\Api\Finance\InvoiceController;
+use App\Http\Controllers\Api\Finance\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -131,6 +134,29 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/{id}', [DcOutController::class, 'show']);
         Route::get('/items/{id}', [DcOutController::class, 'items']);
     });
+
+
+/*
+ ----------------------------------------------------------------------------
+ * After DC out Billing module started on 13-04-26                          |                                                             
+ ----------------------------------------------------------------------------
+ */
+
+Route::prefix('finance')->group(function () {
+
+    Route::post('/invoices/from-dc', [InvoiceController::class,'createFromDc']);
+    Route::get('/invoices', [InvoiceController::class,'index']);
+    Route::get('/invoices/{id}', [InvoiceController::class,'show']);
+    Route::post('/invoices', [InvoiceController::class,'store']);
+    Route::get('/invoices/{id}/download', [InvoiceController::class,'download']);
+    Route::post('/invoices/{id}/cancel', [InvoiceController::class,'cancel']);
+
+    Route::post('/payments', [PaymentController::class,'store']);
+    Route::get('/invoices/{id}/payments', [PaymentController::class,'list']);
+});
+ 
+
+ /*** Billing module route END */
 
     /*
     |--------------------------------------------------------------------------

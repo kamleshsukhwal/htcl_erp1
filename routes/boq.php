@@ -59,10 +59,7 @@ Route::get('/{boqId}/files', [BoqController::class, 'getBoqFiles']);
 
 Route::delete('/file/{boqId}', [BoqController::class, 'deleteFile']);
 
-
-
-
-/*   item code update*/
+ 
 //Route::patch('/update-item-code/{id}', [BoqItemController::class, 'updateItemCode']);
 Route::patch('/boq-items/{id}/item-code', [BoqItemController::class, 'updateItemCode']);
 /*

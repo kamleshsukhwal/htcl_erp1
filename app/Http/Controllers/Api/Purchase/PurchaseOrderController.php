@@ -103,6 +103,7 @@ AuditLog::create([
         'data' => $po
     ], 200);
 }
+
 public function approve($id)
 {
     $po = PurchaseOrder::findOrFail($id);
