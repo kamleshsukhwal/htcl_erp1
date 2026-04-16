@@ -328,4 +328,25 @@ public function getItemFiles($itemId)
     ]);
 
 }
+
+/*** update HSN code */
+public function updateHsn(Request $request, $id)
+{
+    $request->validate([
+        'hsn_code' => 'required|digits_between:4,8'
+    ]);
+
+    $item = BoqItem::findOrFail($id);
+
+    $item->update([
+        'hsn_code' => $request->hsn_code
+    ]);
+
+    return response()->json([
+        'status' => true,
+        'message' => 'HSN updated successfully',
+        'data' => $item
+    ]);
+}
+
 }

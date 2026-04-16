@@ -18,6 +18,7 @@ class BoqItem extends Model
     'scope',
     'item_code',
     'approved_make',
-    'offered_make'
+    'offered_make',
+    'hsn_code'
 ];
 }
