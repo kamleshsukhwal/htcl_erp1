@@ -294,6 +294,101 @@ public function getItemFiles($itemId)
     }
 
 
+    /*** approve reject BOQ files**/
+    
+    
+    public function approve(Request $request, $id)
+{
+    $request->validate([
+        'status' => 'required|in:approved,rejected',
+        'remark' => 'nullable|string'
+    ]);
+
+    $file = BoqItemFile::findOrFail($id);
+
+    // prevent re-approval
+    if ($file->approval_status === 'approved') {
+        return response()->json([
+            'message' => 'Already approved'
+        ], 400);
+    }
+
+    $file->update([
+        'approval_status' => $request->status,
+        'approved_by'     => auth()->id(), // or pass manually
+        'approved_at'     => now(),
+        'approval_remark' => $request->remark
+    ]);
+
+    return response()->json([
+        'message' => 'Document ' . $request->status . ' successfully',
+        'data'    => $file
+    ]);
+}
+
+
+/*** document approval summary */
+
+
+public function approvalSummary()
+{
+    // 1️⃣ Total BOQ Items
+    $totalItems = BoqItem::count();
+
+    // 2️⃣ Get grouped document data
+    $items = DB::table('boq_item_files')
+        ->select(
+            'boq_item_id',
+            DB::raw("SUM(CASE WHEN approval_status = 'approved' THEN 1 ELSE 0 END) as approved_count"),
+            DB::raw("SUM(CASE WHEN approval_status = 'pending' THEN 1 ELSE 0 END) as pending_count"),
+            DB::raw("SUM(CASE WHEN approval_status = 'rejected' THEN 1 ELSE 0 END) as rejected_count"),
+            DB::raw("COUNT(*) as total_docs")
+        )
+        ->groupBy('boq_item_id')
+        ->get();
+
+    // 3️⃣ Initialize counters
+    $approved = 0;
+    $pending = 0;
+    $rejected = 0;
+
+    // 4️⃣ Loop each BOQ item
+    foreach ($items as $item) {
+
+        if ($item->rejected_count > 0) {
+            $rejected++;
+
+        } elseif ($item->pending_count > 0) {
+            $pending++;
+
+        } elseif ($item->approved_count == $item->total_docs) {
+            $approved++;
+        }
+    }
+
+    // 5️⃣ Handle items with NO documents
+    $itemsWithDocs = $items->count();
+    $pending += ($totalItems - $itemsWithDocs);
+
+    // 6️⃣ Calculate percentages
+    $approvedPercent = $totalItems > 0 ? ($approved / $totalItems) * 100 : 0;
+    $pendingPercent  = $totalItems > 0 ? ($pending / $totalItems) * 100 : 0;
+    $rejectedPercent = $totalItems > 0 ? ($rejected / $totalItems) * 100 : 0;
+
+    // 7️⃣ Return response
+    return response()->json([
+        'total_items' => $totalItems,
+        'approved' => $approved,
+        'pending' => $pending,
+        'rejected' => $rejected,
+        'approved_percent' => round($approvedPercent, 2),
+        'pending_percent' => round($pendingPercent, 2),
+        'rejected_percent' => round($rejectedPercent, 2),
+    ]);
+}
+
+
+
 #update item code
  public function updateItemCode(Request $request, $id)
 {
@@ -349,4 +444,53 @@ public function updateHsn(Request $request, $id)
     ]);
 }
 
+/**API → Single BOQ + All Items + All Documents
+
+👉 For a BOQ (ex: HVAC), return:
+
+BOQ details
+All items
+Each item → all uploaded files */
+
+public function itemsWithFiles($boqId)
+{
+    $boq = Boq::findOrFail($boqId);
+
+    $items = BoqItem::where('boq_id', $boqId)
+        ->with(['files']) // relation
+        ->get();
+
+    return response()->json([
+        'status' => true,
+        'boq' => $boq,
+        'items' => $items
+    ]);
+}
+
+
+
+
+/*** API → BOQ + Document Type (TDS/MIR/etc) + All Items
+
+👉 Example:
+
+BOQ = HVAC
+Document Type = TDS */
+public function itemsByDocumentType($boqId, $type)
+{
+    $boq = Boq::findOrFail($boqId);
+
+    $items = BoqItem::where('boq_id', $boqId)
+        ->with(['files' => function ($q) use ($type) {
+            $q->where('document_type', $type);
+        }])
+        ->get();
+
+    return response()->json([
+        'status' => true,
+        'boq' => $boq,
+        'document_type' => $type,
+        'items' => $items
+    ]);
+}
 }
