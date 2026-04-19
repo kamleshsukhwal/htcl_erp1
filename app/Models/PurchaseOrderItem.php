@@ -15,7 +15,8 @@ protected $fillable = [
     'ordered_qty',
     'unit_price',
     'total',
-    'item_name'
+    'item_name',
+    'is_manual'
 ];
 
 public function boqItem()

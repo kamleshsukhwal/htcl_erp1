@@ -21,4 +21,9 @@ class BoqItem extends Model
     'offered_make',
     'hsn_code'
 ];
+
+public function files()
+{
+    return $this->hasMany(BoqItemFile::class, 'boq_item_id');
+}
 }

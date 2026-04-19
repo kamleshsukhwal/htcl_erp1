@@ -54,12 +54,17 @@ Route::get('/{id}/items', [BoqController::class,'getBoqItems']);
 
 /***** BOQ file upload */
 Route::post('/{boqId}/upload', [BoqController::class, 'uploadFile']);
-  
 Route::get('/{boqId}/files', [BoqController::class, 'getBoqFiles']);
-
 Route::delete('/file/{boqId}', [BoqController::class, 'deleteFile']);
+Route::post('/boq-item-files/{id}/approve', [BoqItemController::class, 'approve']);
+/** for boq item approval or reject option */
+Route::get('/boq-items/approval-summary', [BoqItemController::class, 'approvalSummary']);
 
- 
+
+Route::get('/{boqId}/items-with-files', [BoqItemController::class, 'itemsWithFiles']);
+
+Route::get('/{boqId}/documents/{type}', [BoqItemController::class, 'itemsByDocumentType']);
+
 //Route::patch('/update-item-code/{id}', [BoqItemController::class, 'updateItemCode']);
 Route::patch('/boq-items/{id}/item-code', [BoqItemController::class, 'updateItemCode']);
 Route::patch('/boq-items/{id}/hsn', [BoqItemController::class, 'updateHsn']);
@@ -68,7 +73,7 @@ Route::patch('/boq-items/{id}/hsn', [BoqItemController::class, 'updateHsn']);
         | BOQ Revisions
         |--------------------------------------------------------------------------
         */
-        Route::get('/{boq_id}/revisions', [BoqRevisionController::class, 'index'])
+  Route::get('/{boq_id}/revisions', [BoqRevisionController::class, 'index'])
             ->middleware('permission:boq.view');
 
         Route::post('/{boq_id}/revisions', [BoqRevisionController::class, 'store'])

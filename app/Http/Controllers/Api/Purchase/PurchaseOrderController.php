@@ -28,12 +28,14 @@ use Illuminate\Support\Facades\DB;
             'project_id'    => 'required|integer',
             'order_date'    => 'required|date',
             'total_amount'  => 'required|numeric',
+            
             'status'        => 'required|string',
             'items'         => 'required|array|min:1',
             'items.*.item_name'   => 'required|string',
             'items.*.ordered_qty'    => 'required|numeric',
-            'items.*.boq_id'=> 'required|numeric',
-            'items.*.boq_item_id'=> 'required|numeric', /// used for boq_item_id 
+            'items.*.is_manual' => 'nullable|boolean',
+            'items.*.boq_id'=> 'nullable|numeric',
+            'items.*.boq_item_id'=> 'nullable|numeric', /// used for boq_item_id 
             'items.*.unit_price'  => 'required|numeric',
             'items.*.total'       => 'required|numeric',
         ]);
@@ -47,17 +49,17 @@ use Illuminate\Support\Facades\DB;
             );
 
             // 2️⃣ Create PO Items
-            foreach ($request->items as $item) {
-                PurchaseOrderItem::create([
-                    'purchase_order_id' => $po->id,
-                  'boq_item_id' => $item['boq_item_id'],
-                    'item_name'         => $item['item_name'],
-                    'ordered_qty'          => $item['ordered_qty'],
-                    'unit_price'        => $item['unit_price'],
-                   // 'rate' => $item['rate'],
-                    'total'             => $item['total'],
-                ]);
-            }
+           foreach ($request->items as $item) {
+    PurchaseOrderItem::create([
+        'purchase_order_id' => $po->id,
+        'boq_item_id'       => $item['boq_item_id'] ?? null,
+        'item_name'         => $item['item_name'],
+        'ordered_qty'       => $item['ordered_qty'],
+        'unit_price'        => $item['unit_price'],
+        'total'             => $item['total'],
+        'is_manual'         => $item['is_manual'] ?? 0, // ✅ key line
+    ]);
+}
 
             DB::commit();
 

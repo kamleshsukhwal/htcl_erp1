@@ -193,13 +193,7 @@ $this->logAudit('BOQ_ITEM', $itemId, 'DELETE', $oldData, null);
 
 $this->logAudit('BOQ', $boqId, 'STATUS_UPDATE', $oldData, $boq->fresh()->toArray());
     }
-    /// BOQ item upload from file.
-
-
-
-
-
-
+    // BOQ item upload from file.
 
 
     // JSON upload
@@ -207,14 +201,13 @@ $this->logAudit('BOQ', $boqId, 'STATUS_UPDATE', $oldData, $boq->fresh()->toArray
     {
         $items = BoqItem::where('boq_id', $boqId)
             ->orderBy('sn')
-            ->get(); ///  file lock by admin
+            ->get(); //  file lock by admin
 
         return response()->json([
             'status' => true,
             'data' => $items
         ]);
     }
-
 
     // 🔹 SHOW BOQ DETAILS WITH ITEMS AND FILES   cmted and added background color
     /*
@@ -291,32 +284,7 @@ public function show($id)
                 '=',
                 'bi.id'
             )
-
-        
-            /*
-            select(
-                'bi.*',
-
-                // ✅ Progress fields
-                DB::raw('COALESCE(bp.executed_qty, 0) as executed_qty'),
-                DB::raw('(bi.quantity - COALESCE(bp.executed_qty, 0)) as balance_qty'),
-                DB::raw('(COALESCE(bp.executed_qty, 0) * bi.rate) as executed_amount'),
-                DB::raw('((bi.quantity - COALESCE(bp.executed_qty, 0)) * bi.rate) as balance_amount'),
-
-                // ✅ Qty change tracking
-                'bh.old_quantity',
-                'bh.new_quantity',
-
-                DB::raw("
-                CASE 
-                    WHEN bh.new_quantity > bh.old_quantity THEN 'increased'
-                    WHEN bh.new_quantity < bh.old_quantity THEN 'decreased'
-                    WHEN bh.new_quantity = bh.old_quantity THEN 'same'
-                    ELSE 'no_history'
-                END as qty_change_type
-            "),*/
-
-
+ 
 
 
             ->select(
