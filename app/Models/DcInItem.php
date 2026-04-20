@@ -9,7 +9,8 @@ class DcInItem extends Model
     protected $fillable = [
         'dc_in_id',
         'boq_item_id',
-        'supplied_qty'
+        'supplied_qty',
+         'item_name'
     ];
 
     // Relationship with DC In

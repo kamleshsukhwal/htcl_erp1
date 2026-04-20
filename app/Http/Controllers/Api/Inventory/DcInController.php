@@ -15,12 +15,11 @@ class DcInController extends Controller
 {
    public function store(Request $request)
 {
-    // ✅ STEP 1: Normalize input (0 → null)
-   $items = collect($request->items)->map(function ($item) {
+    $items = collect($request->items)->map(function ($item) {
 
-    // convert 0, "0", "", undefined → null
     $boqId = $item['boq_id'] ?? null;
 
+    // convert 0, "0", "", null → null
     if (empty($boqId) || $boqId == 0 || $boqId === "0") {
         $item['boq_id'] = null;
     } else {
@@ -28,17 +27,22 @@ class DcInController extends Controller
     }
 
     return $item;
-});
+
+})->toArray();
+
+// 🔥 THIS LINE IS THE REAL FIX
+$request->merge(['items' => $items]);
+
     // ✅ STEP 2: Validation
     $request->validate([
-        'vendor_id' => 'required|exists:vendors,id',
-        'po_id' => 'required|exists:purchase_orders,id',
-        'delivery_channel' => 'required|in:vendor,warehouse,site',
-        'items' => 'required|array',
-        'items.*.boq_id' => 'nullable|exists:boq_items,id',
-        'items.*.qty' => 'required|numeric|min:0.01',
-        'items.*.item_name' => 'required_without:items.*.boq_id',
-    ]);
+    'vendor_id' => 'required|exists:vendors,id',
+    'po_id' => 'required|exists:purchase_orders,id',
+    'delivery_channel' => 'required|in:vendor,warehouse,site',
+    'items' => 'required|array',
+    'items.*.boq_id' => 'nullable|exists:boq_items,id',
+    'items.*.qty' => 'required|numeric|min:0.01',
+    'items.*.item_name' => 'required_without:items.*.boq_id',
+]);
 
     DB::transaction(function () use ($request, $items) {
 
