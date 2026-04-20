@@ -63,11 +63,14 @@ class DcInController extends Controller
                 ]);
 
                 // 🔥 STOCK UPDATE
-                Stock::updateOrCreate(
-                    ['boq_item_id' => $boqId],
-                    ['available_qty' => DB::raw("available_qty + {$item['qty']}")]
-                );
+              
+$stock = Stock::firstOrCreate(
+    ['boq_item_id' => $boqId],
+    ['available_qty' => 0]
+);
 
+// increment safely
+$stock->increment('available_qty', $item['qty']);
                 // 🔥 STOCK TRANSACTION
                 StockTransaction::create([
                     'boq_item_id' => $boqId,
