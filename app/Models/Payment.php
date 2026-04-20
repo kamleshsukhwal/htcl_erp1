@@ -6,13 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
-    protected $fillable = [
-        'invoice_id',
-        'amount',
-        'payment_date',
-        'mode',
-        'reference_no'
-    ];
+   protected $fillable = [
+    'invoice_id',
+    'amount',
+    'payment_date',
+    'mode',
+    'txn_ref_no',
+    'attachment'
+];
 
     // 🔹 Relationship
 
