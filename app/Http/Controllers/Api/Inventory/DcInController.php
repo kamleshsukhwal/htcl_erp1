@@ -20,7 +20,7 @@ class DcInController extends Controller
             'po_id' => 'required|exists:purchase_orders,id',
             'delivery_channel' => 'required|in:vendor,warehouse,site',
             'items' => 'required|array',
-            'items.*.boq_id' => 'required|exists:boq_items,id',
+            'items.*.boq_id' => 'nullable|exists:boq_items,id',
             'items.*.qty' => 'required|numeric|min:0.01',
         ]);
 
@@ -35,47 +35,71 @@ class DcInController extends Controller
                 'delivery_date' => now(),
             ]);
 
-            foreach ($request->items as $item) {
+             foreach ($request->items as $item) {
+ if (isset($item['boq_id']) && $item['boq_id'] == 0) {
+        $request->items[$key]['boq_id'] = null;
+    }
+    $boqId = $item['boq_id'] ?? null;
 
-                // ✅ Save DC IN Item
-                DcInItem::create([
-                    'dc_in_id' => $dc->id,
-                    'boq_item_id' => $item['boq_id'],
-                    'supplied_qty' => $item['qty'],
-                ]);
+    // ✅ CASE 1: BOQ ITEM
+    if (!empty($boqId)) {
 
-                // 🔥 STOCK UPDATE (ADD)
-                Stock::updateOrCreate(
-                    ['boq_item_id' => $item['boq_id']],
-                    ['available_qty' => DB::raw("available_qty + {$item['qty']}")]
-                );
+        // Save DC IN Item
+        DcInItem::create([
+            'dc_in_id' => $dc->id,
+            'boq_item_id' => $boqId,
+            'item_name' => null, // optional
+            'supplied_qty' => $item['qty'],
+        ]);
 
-                // 🔥 STOCK TRANSACTION
-                StockTransaction::create([
-                    'boq_item_id' => $item['boq_id'],
-                    'type' => 'IN',
-                    'quantity' => $item['qty'],
-                    'reference_type' => 'DC_IN',
-                    'reference_id' => $dc->id
-                ]);
+        // 🔥 STOCK UPDATE
+        Stock::updateOrCreate(
+            ['boq_item_id' => $boqId],
+            ['available_qty' => DB::raw("available_qty + {$item['qty']}")]
+        );
 
-                // 🔥 OPTIONAL: If you want to track supply in progress table
-                BoqItemProgress::updateOrCreate(
-                    [
-                        'boq_item_id' => $item['boq_id'],
-                        'entry_date' => now()->toDateString()
-                    ],
-                    [
-                        'executed_qty' => DB::raw("executed_qty + {$item['qty']}")
-                    ]
-                );
-            }
+        // 🔥 STOCK TRANSACTION
+        StockTransaction::create([
+            'boq_item_id' => $boqId,
+            'type' => 'IN',
+            'quantity' => $item['qty'],
+            'reference_type' => 'DC_IN',
+            'reference_id' => $dc->id
+        ]);
+
+        // 🔥 PROGRESS TABLE
+        BoqItemProgress::updateOrCreate(
+            [
+                'boq_item_id' => $boqId,
+                'entry_date' => now()->toDateString()
+            ],
+            [
+                'executed_qty' => DB::raw("executed_qty + {$item['qty']}")
+            ]
+        );
+
+    } else {
+
+        // ✅ CASE 2: MANUAL ITEM
+
+        DcInItem::create([
+            'dc_in_id' => $dc->id,
+            'boq_item_id' => null,
+            'item_name' => $item['item_name'], // REQUIRED
+            'supplied_qty' => $item['qty'],
+        ]);
+
+        // ❌ NO STOCK UPDATE
+        // ❌ NO STOCK TRANSACTION
+        // ❌ NO PROGRESS TABLE
+    }
+}
         });
 
         return response()->json([
             'status' => true,
             'message' => 'DC IN saved successfully'
-        ]);
+        ]);  
     }
 
     /*
