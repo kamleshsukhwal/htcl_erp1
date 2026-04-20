@@ -16,13 +16,19 @@ class DcInController extends Controller
    public function store(Request $request)
 {
     // ✅ STEP 1: Normalize input (0 → null)
-    $items = collect($request->items)->map(function ($item) {
-        if (isset($item['boq_id']) && $item['boq_id'] == 0) {
-            $item['boq_id'] = null;
-        }
-        return $item;
-    });
+   $items = collect($request->items)->map(function ($item) {
 
+    // convert 0, "0", "", undefined → null
+    $boqId = $item['boq_id'] ?? null;
+
+    if (empty($boqId) || $boqId == 0 || $boqId === "0") {
+        $item['boq_id'] = null;
+    } else {
+        $item['boq_id'] = (int) $boqId;
+    }
+
+    return $item;
+});
     // ✅ STEP 2: Validation
     $request->validate([
         'vendor_id' => 'required|exists:vendors,id',
