@@ -153,6 +153,9 @@ Route::prefix('finance')->group(function () {
 
     Route::post('/payments', [PaymentController::class,'store']);
     Route::get('/invoices/{id}/payments', [PaymentController::class,'list']);
+  Route::post('/payments', [PaymentController::class,'getPaymentreceipt']);
+Route::get('/payments/{id}/download', [PaymentController::class, 'downloadPaymentReeipt']);
+    
 });
  
 
