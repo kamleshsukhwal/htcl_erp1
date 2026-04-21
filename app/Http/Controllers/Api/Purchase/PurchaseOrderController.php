@@ -12,18 +12,18 @@ use Illuminate\Support\Facades\DB;
 class PurchaseOrderController extends Controller
 {
    
-    public function index()
-    {
-        $pos = PurchaseOrder::where('status',1)->get()->map(function ($po) {
-            $po->grand_total = $po->total_amount + $po->gst_amount;
-            return $po;
-        });
+public function index()
+{
+    $pos = PurchaseOrder::where('status',1)->get()->map(function ($po) {
+        $po->total_amount = round($po->total_amount + $po->gst_amount, 2);
+        return $po;
+    });
 
-        return response()->json([
-            'status' => true,
-            'data' => $pos
-        ]);
-    }
+    return response()->json([
+        'status' => true,
+        'data' => $pos
+    ]);
+}
 
 
     public function store(Request $request)
@@ -66,16 +66,15 @@ class PurchaseOrderController extends Controller
                 ]);
             }
 
-            DB::commit();
+          DB::commit();
 
-            // ✅ ADD GRAND TOTAL IN RESPONSE
-            $po->grand_total = $po->total_amount + $po->gst_amount;
+// override total_amount in response only
+$po->total_amount = round($po->total_amount + $po->gst_amount, 2);
 
-            return response()->json([
-                'message' => 'Purchase Order created successfully',
-                'data'    => $po->load('items')
-            ], 201);
-
+return response()->json([
+    'message' => 'Purchase Order created successfully',
+    'data'    => $po->load('items')
+], 201);
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -87,25 +86,24 @@ class PurchaseOrderController extends Controller
     }
 
 
-    public function show($id)
-    {
-        $po = PurchaseOrder::with('items.boqItem')->find($id);
+  public function show($id)
+{
+    $po = PurchaseOrder::with('items.boqItem')->find($id);
 
-        if (!$po) {
-            return response()->json([
-                'message' => 'Purchase Order not found'
-            ], 404);
-        }
-
-        // ✅ ADD GRAND TOTAL
-        $po->grand_total = $po->total_amount + $po->gst_amount;
-
+    if (!$po) {
         return response()->json([
-            'message' => 'Purchase Order details',
-            'data' => $po
-        ], 200);
+            'message' => 'Purchase Order not found'
+        ], 404);
     }
 
+    // override total_amount
+    $po->total_amount = round($po->total_amount + $po->gst_amount, 2);
+
+    return response()->json([
+        'message' => 'Purchase Order details',
+        'data' => $po
+    ], 200);
+}
 
     public function approve($id)
     {
