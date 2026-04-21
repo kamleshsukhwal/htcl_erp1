@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('stocks', function (Blueprint $table) {
     $table->unsignedBigInteger('boq_item_id')->nullable()->change();
-    $table->string('item_name')->nullable()->after('boq_item_id');
+    //$table->string('item_name')->nullable()->after('boq_item_id');
 });
     }
 
