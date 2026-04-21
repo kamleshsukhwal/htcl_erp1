@@ -74,35 +74,38 @@ class DcInController extends Controller
                 // =========================
                 if (!empty($boqId)) {
 
-                    // 🔹 BOQ ITEM
-                    $stock = Stock::firstOrCreate(
-                        ['boq_item_id' => $boqId],
-                        ['available_qty' => 0]
-                    );
+    // BOQ ITEM STOCK
+    $stock = Stock::firstOrCreate(
+        ['boq_item_id' => $boqId],
+        ['available_qty' => 0]
+    );
 
-                } else {
+} else {
 
-                    // 🔹 MANUAL ITEM
-                    $stock = Stock::firstOrCreate(
-                        ['item_name' => $itemName],
-                        ['available_qty' => 0]
-                    );
-                }
+    // 🔥 MANUAL ITEM STOCK
+    $stock = Stock::firstOrCreate(
+        ['item_name' => $item['item_name']],
+        [
+            'boq_item_id' => null,
+            'available_qty' => 0
+        ]
+    );
+}
 
-                // 🔥 Increment stock
-                $stock->increment('available_qty', $item['qty']);
+// increment
+$stock->increment('available_qty', $item['qty']);
 
                 // =========================
                 // ✅ STOCK TRANSACTION
                 // =========================
-                StockTransaction::create([
-                    'boq_item_id' => $boqId,
-                    'item_name' => $boqId ? null : $itemName,
-                    'type' => 'IN',
-                    'quantity' => $item['qty'],
-                    'reference_type' => 'DC_IN',
-                    'reference_id' => $dc->id
-                ]);
+              StockTransaction::create([
+    'boq_item_id' => $boqId,
+    'item_name' => $item['item_name'] ?? null,
+    'type' => 'IN',
+    'quantity' => $item['qty'],
+    'reference_type' => 'DC_IN',
+    'reference_id' => $dc->id
+]);
 
                 // =========================
                 // ✅ PROGRESS (ONLY BOQ)
