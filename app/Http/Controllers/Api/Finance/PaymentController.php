@@ -5,7 +5,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Payment;
 use App\Models\Invoice;
-
+/**** Controller for Billing payment after invoice */
 class PaymentController extends Controller
 {
     // 5. Add Payment

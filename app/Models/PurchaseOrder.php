@@ -18,4 +18,8 @@ class PurchaseOrder extends Model
     {
         return $this->hasMany(PurchaseOrderItem::class);
     }
+    public function invoice()
+{
+    return $this->hasOne(\App\Models\Invoice::class, 'po_id', 'id');
+}
 }
