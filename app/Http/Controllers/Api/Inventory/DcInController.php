@@ -68,7 +68,7 @@ $request->merge(['items' => $items]);
                 DcInItem::create([
                     'dc_in_id' => $dc->id,
                     'boq_item_id' => $boqId,
-                    'item_name' => null,
+                    'item_name' => $item['item_name'],
                     'supplied_qty' => $item['qty'],
                 ]);
 

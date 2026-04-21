@@ -21,4 +21,9 @@ class Payment extends Model
     {
         return $this->belongsTo(Invoice::class);
     }
+
+    public function attachments()
+{
+    return $this->hasMany(Payment::class);
+}
 }

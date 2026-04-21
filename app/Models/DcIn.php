@@ -11,7 +11,8 @@ class DcIn extends Model
         'vendor_id',
         'purchase_order_id',
         'delivery_channel',
-        'delivery_date'
+        'delivery_date',
+        'item_name'
     ];
 
     public function items()
