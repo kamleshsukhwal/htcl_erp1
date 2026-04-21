@@ -10,6 +10,7 @@ class Stock extends Model
 
     protected $fillable = [
         'boq_item_id',
+        'item_name',
         'available_qty'
     ];
     protected $casts = [

@@ -10,10 +10,11 @@ class StockTransaction extends Model
     use HasFactory;
 
     protected $fillable = [
-        'boq_item_id',
-        'type',
-        'quantity',
-        'reference_type',
-        'reference_id'
-    ];
+    'boq_item_id',
+    'item_name',
+    'type',
+    'quantity',
+    'reference_type',
+    'reference_id'
+];
 }

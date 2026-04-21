@@ -36,6 +36,18 @@ public function store(Request $request)
     $paid = VendorPayment::where('po_id', $request->po_id)->sum('amount');
     $po = PurchaseOrder::find($request->po_id);
 
+
+
+$paid = VendorPayment::where('po_id', $request->po_id)->sum('amount');
+$po = PurchaseOrder::find($request->po_id);
+
+if (($paid + $request->amount) > $po->total_amount) {
+    return response()->json([
+        'status' => false,
+        'message' => 'Payment exceeds PO total amount'
+    ], 400);
+}
+
     if ($paid >= $po->total_amount) {
         $status = 'paid';
     } elseif ($paid > 0) {
