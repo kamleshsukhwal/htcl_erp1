@@ -15,7 +15,14 @@ class PurchaseOrderController extends Controller
 public function index()
 {
     $pos = PurchaseOrder::where('status',1)->get()->map(function ($po) {
-        $po->total_amount = round($po->total_amount + $po->gst_amount, 2);
+
+        $po->total_amount = number_format(
+            ((float)$po->total_amount + (float)$po->gst_amount),
+            2,
+            '.',
+            ''
+        );
+
         return $po;
     });
 
@@ -69,8 +76,12 @@ public function index()
           DB::commit();
 
 // override total_amount in response only
-$po->total_amount = round($po->total_amount + $po->gst_amount, 2);
-
+$po->total_amount = number_format(
+    ((float)$po->total_amount + (float)$po->gst_amount),
+    2,
+    '.',
+    ''
+);
 return response()->json([
     'message' => 'Purchase Order created successfully',
     'data'    => $po->load('items')
