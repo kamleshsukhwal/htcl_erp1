@@ -14,13 +14,31 @@ class DcOutController extends Controller
 {
     public function store(Request $request)
     {
+        // ✅ Normalize items (same as DCIN)
+        $items = collect($request->items)->map(function ($item) {
+
+            $boqId = $item['boq_item_id'] ?? null;
+
+            if (empty($boqId) || $boqId == 0 || $boqId === "0") {
+                $item['boq_item_id'] = null;
+            } else {
+                $item['boq_item_id'] = (int) $boqId;
+            }
+
+            return $item;
+
+        })->toArray();
+
+        $request->merge(['items' => $items]);
+
         // ✅ Validation
         $request->validate([
             'project_id' => 'required|exists:projects,id',
             'issue_date' => 'required|date',
             'issued_to' => 'required|string',
             'items' => 'required|array',
-            'items.*.boq_item_id' => 'required|exists:boq_items,id',
+            'items.*.boq_item_id' => 'nullable|exists:boq_items,id',
+            'items.*.item_name' => 'required_without:items.*.boq_item_id',
             'items.*.issued_qty' => 'required|numeric|min:0.01',
         ]);
 
@@ -36,28 +54,54 @@ class DcOutController extends Controller
                 'issued_to' => $request->issued_to
             ]);
 
-            foreach ($request->items as $item) {
+            foreach ($items as $item) {
 
-                // 🔥 GET STOCK FROM STOCK TABLE
-                $stock = Stock::where('boq_item_id', $item['boq_item_id'])->first();
+                $boqId = $item['boq_item_id'] ?? null;
+                $itemName = $item['item_name'] ?? null;
 
-                if (!$stock || $stock->available_qty < $item['issued_qty']) {
-                    throw new \Exception("Insufficient stock for BOQ Item ID: " . $item['boq_item_id']);
+                // =========================
+                // ✅ FIND STOCK
+                // =========================
+                if (!empty($boqId)) {
+
+                    $stock = Stock::where('boq_item_id', $boqId)->first();
+
+                } else {
+
+                    $stock = Stock::where('item_name', $itemName)->first();
                 }
 
-                // ✅ Save DC OUT ITEM
+                // ❌ Stock not found
+                if (!$stock) {
+                    throw new \Exception("Stock not found for item: " . ($boqId ? "BOQ ID $boqId" : $itemName));
+                }
+
+                // ❌ Insufficient stock
+                if ($stock->available_qty < $item['issued_qty']) {
+                    throw new \Exception("Insufficient stock for item: " . ($boqId ? "BOQ ID $boqId" : $itemName));
+                }
+
+                // =========================
+                // ✅ SAVE DC OUT ITEM
+                // =========================
                 DcOutItem::create([
                     'dc_out_id' => $dcOut->id,
-                    'boq_item_id' => $item['boq_item_id'],
+                    'boq_item_id' => $boqId,
+                    'item_name' => $itemName,
                     'issued_qty' => $item['issued_qty']
                 ]);
 
+                // =========================
                 // 🔥 DECREASE STOCK
+                // =========================
                 $stock->decrement('available_qty', $item['issued_qty']);
 
+                // =========================
                 // 🔥 STOCK TRANSACTION (OUT)
+                // =========================
                 StockTransaction::create([
-                    'boq_item_id' => $item['boq_item_id'],
+                    'boq_item_id' => $boqId,
+                    'item_name' => $boqId ? null : $itemName,
                     'type' => 'OUT',
                     'quantity' => $item['issued_qty'],
                     'reference_type' => 'DC_OUT',
@@ -83,11 +127,9 @@ class DcOutController extends Controller
         }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | LIST ALL DC OUT
-    |--------------------------------------------------------------------------
-    */
+    // ===============================
+    // ✅ LIST ALL DC OUT
+    // ===============================
     public function index()
     {
         $data = DcOut::with('items.boqItem')->latest()->get();
@@ -98,11 +140,9 @@ class DcOutController extends Controller
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | GET ITEMS OF DC OUT
-    |--------------------------------------------------------------------------
-    */
+    // ===============================
+    // ✅ GET ITEMS OF DC OUT
+    // ===============================
     public function items($dcOutId)
     {
         $items = DcOutItem::where('dc_out_id', $dcOutId)
@@ -115,11 +155,9 @@ class DcOutController extends Controller
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | SHOW SINGLE DC OUT
-    |--------------------------------------------------------------------------
-    */
+    // ===============================
+    // ✅ SHOW SINGLE DC OUT
+    // ===============================
     public function show($id)
     {
         $dc = DcOut::with('items.boqItem')->findOrFail($id);
