@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\Project\ProjectAttachmentController;
 // finance
 use App\Http\Controllers\Api\Finance\InvoiceController;
 use App\Http\Controllers\Api\Finance\PaymentController;
+use App\Http\Controllers\Api\Finance\VendorPaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -105,7 +106,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/', [PurchaseOrderController::class, 'store']); // Create PO
         Route::get('/{id}', [PurchaseOrderController::class, 'show']);
         Route::get('/project/{project_id}', [PurchaseOrderController::class, 'byProject']);
+
+
+/**** Once Purchase order create need to pay to vendor payment  */
+
+Route::post('/vendor-payments', [VendorPaymentController::class, 'store']);
+Route::post('/vendor-payments/{id}/upload', [VendorPaymentController::class, 'uploadAttachment']);
+Route::get('/vendor-payments/download/{id}', [VendorPaymentController::class, 'download']);
+Route::get('/vendor-payments/history/{poId}', [VendorPaymentController::class, 'history']);
     });
+
+
 
     /*
     |--------------------------------------------------------------------------
@@ -138,7 +149,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 /*
  ----------------------------------------------------------------------------
- * After DC out Billing module started on 13-04-26                          |                                                             
+ * After DC out Billing module started on 13-04-26   and payment            |                                                             
  ----------------------------------------------------------------------------
  */
 

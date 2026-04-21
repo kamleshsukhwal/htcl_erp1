@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\DB;
   public function index()
     {
         return PurchaseOrder::where('status',1)->get();
+
+
+       
     }
 
 

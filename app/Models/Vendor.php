@@ -26,5 +26,8 @@ class Vendor extends Model
     return $this->hasMany(VendorAttachment::class);
 }
 
-
+public function payments()
+{
+    return $this->hasMany(VendorPayment::class, 'vendor_id');
+}
 }
