@@ -122,11 +122,11 @@ public function history($poId)
 
     $po = PurchaseOrder::findOrFail($poId);
 
-    $remaining = $po->total_amount - $totalPaid;
+    $remaining = $po->total_amount + $po->gst_amount - $totalPaid;
 
     return response()->json([
         'status' => true,
-        'po_total' => $po->total_amount,
+        'po_total' => $po->total_amount+$po->gst_amount,
         'total_paid' => $totalPaid,
         'remaining_amount' => $remaining,
         'data' => $payments
