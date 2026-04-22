@@ -7,6 +7,7 @@ use App\Models\BoqItemProgress;
 use App\Models\DcIn;
 use App\Models\DcInItem;
 use App\Models\Stock;
+use App\Models\BoqItem;
 use App\Models\StockTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,11 +21,7 @@ class DcInController extends Controller
 
             $boqId = $item['boq_id'] ?? null;
 
-            if (empty($boqId) || $boqId == 0 || $boqId === "0") {
-                $item['boq_id'] = null;
-            } else {
-                $item['boq_id'] = (int) $boqId;
-            }
+            $item['boq_id'] = (!empty($boqId) && $boqId != 0) ? (int)$boqId : null;
 
             return $item;
 
@@ -54,10 +51,19 @@ class DcInController extends Controller
                 'delivery_date' => now(),
             ]);
 
+            // ✅ Fetch BOQ item names in one query (performance)
+            $boqIds = collect($items)->pluck('boq_id')->filter();
+            $boqItems = BoqItem::whereIn('id', $boqIds)->pluck('item_name', 'id');
+
             foreach ($items as $item) {
 
-                $boqId = $item['boq_id'] ?? null;
+                $boqId = $item['boq_id'];
                 $itemName = $item['item_name'] ?? null;
+
+                // ✅ FINAL ITEM NAME (IMPORTANT FIX)
+                $itemNameFinal = $boqId
+                    ? ($boqItems[$boqId] ?? null)
+                    : $itemName;
 
                 // =========================
                 // ✅ SAVE DC ITEM
@@ -65,52 +71,49 @@ class DcInController extends Controller
                 DcInItem::create([
                     'dc_in_id' => $dc->id,
                     'boq_item_id' => $boqId,
-                    'item_name' => $itemName,
+                    'item_name' => $itemNameFinal, // ✅ always store name
                     'supplied_qty' => $item['qty'],
                 ]);
 
                 // =========================
-                // ✅ STOCK LOGIC (COMMON)
+                // ✅ STOCK LOGIC
                 // =========================
-                if (!empty($boqId)) {
+                if ($boqId) {
 
-    // BOQ ITEM STOCK
-    $stock = Stock::firstOrCreate(
-        ['boq_item_id' => $boqId],
-        ['available_qty' => 0]
-    );
+                    $stock = Stock::firstOrCreate(
+                        ['boq_item_id' => $boqId],
+                        ['available_qty' => 0]
+                    );
 
-} else {
+                } else {
 
-    // 🔥 MANUAL ITEM STOCK
-    $stock = Stock::firstOrCreate(
-        ['item_name' => $item['item_name']],
-        [
-            'boq_item_id' => null,
-            'available_qty' => 0
-        ]
-    );
-}
+                    $stock = Stock::firstOrCreate(
+                        [
+                            'item_name' => $itemNameFinal,
+                            'boq_item_id' => null
+                        ],
+                        ['available_qty' => 0]
+                    );
+                }
 
-// increment
-$stock->increment('available_qty', $item['qty']);
+                $stock->increment('available_qty', $item['qty']);
 
                 // =========================
-                // ✅ STOCK TRANSACTION
+                // ✅ STOCK TRANSACTION (FIXED)
                 // =========================
-              StockTransaction::create([
-    'boq_item_id' => $boqId,
-    'item_name' => $item['item_name'] ?? null,
-    'type' => 'IN',
-    'quantity' => $item['qty'],
-    'reference_type' => 'DC_IN',
-    'reference_id' => $dc->id
-]);
+                StockTransaction::create([
+                    'boq_item_id' => $boqId,
+                    'item_name' => $itemNameFinal, // ✅ ALWAYS FILLED
+                    'type' => 'IN',
+                    'quantity' => $item['qty'],
+                    'reference_type' => 'DC_IN',
+                    'reference_id' => $dc->id
+                ]);
 
                 // =========================
-                // ✅ PROGRESS (ONLY BOQ)
+                // ✅ BOQ PROGRESS
                 // =========================
-                if (!empty($boqId)) {
+                if ($boqId) {
 
                     BoqItemProgress::updateOrCreate(
                         [
@@ -175,4 +178,39 @@ $stock->increment('available_qty', $item['qty']);
             'data' => $dc
         ]);
     }
+
+    // ===============================
+    // ✅ DCIN ITEMS WITH STOCK (FIXED)
+    // ===============================
+    public function getDcinItemsWithStock($dcinId)
+{
+    $items = DcInItem::where('dc_in_id', $dcinId)
+        ->get()
+        ->map(function ($item) {
+
+            if ($item->boq_item_id) {
+
+                $stock = Stock::where('boq_item_id', $item->boq_item_id)->first();
+
+            } else {
+
+                $stock = Stock::where('item_name', $item->item_name)
+                    ->whereNull('boq_item_id')
+                    ->first();
+            }
+
+            return [
+               // 'dcin_item_id' => $item->id,
+             //   'boq_item_id' => $item->boq_item_id,
+                'item_name' => $stock->item_name ?? $item->item_name ?? 'N/A', // ✅ FIXED
+                'dcin_qty' => $item->supplied_qty,
+                'available_qty' => $stock->available_qty ?? 0
+            ];
+        });
+
+    return response()->json([
+        'status' => true,
+        'data' => $items
+    ]);
+}
 }

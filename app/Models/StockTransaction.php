@@ -17,4 +17,9 @@ class StockTransaction extends Model
     'reference_type',
     'reference_id'
 ];
+
+public function boqItem()
+{
+    return $this->belongsTo(BoqItem::class, 'boq_item_id');
+}
 }
