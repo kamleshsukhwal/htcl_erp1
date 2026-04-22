@@ -130,6 +130,8 @@ Route::get('/vendor-payments/history/{poId}', [VendorPaymentController::class, '
         Route::get('/{id}', [DcInController::class, 'show']);
 
         Route::get('/project/{project_id}', [DcInController::class, 'byProject']);
+Route::get('/{id}/items-stock', [DcInController::class, 'getDcinItemsWithStock']);
+        
     });
     /*
     |--------------------------------------------------------------------------

@@ -9,7 +9,7 @@ use App\Models\Stock;
 use App\Models\StockTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+   use App\Models\BoqItem;
 class DcOutController extends Controller
 {
     public function store(Request $request)
@@ -54,60 +54,60 @@ class DcOutController extends Controller
                 'issued_to' => $request->issued_to
             ]);
 
-            foreach ($items as $item) {
+        
 
-                $boqId = $item['boq_item_id'] ?? null;
-                $itemName = $item['item_name'] ?? null;
+foreach ($items as $item) {
 
-                // =========================
-                // ✅ FIND STOCK
-                // =========================
-                if (!empty($boqId)) {
+    $boqId = $item['boq_item_id'] ?? null;
+    $itemName = $item['item_name'] ?? null;
 
-                    $stock = Stock::where('boq_item_id', $boqId)->first();
+    // ✅ FINAL NAME
+    $itemNameFinal = $boqId
+        ? optional(BoqItem::find($boqId))->item_name
+        : $itemName;
 
-                } else {
+    // =========================
+    // ✅ SAVE DC OUT ITEM
+    // =========================
+    DcOutItem::create([
+        'dc_out_id' => $dcOut->id,
+        'boq_item_id' => $boqId,
+        'item_name' => $itemNameFinal, // ✅ IMPORTANT
+        'issued_qty' => $item['issued_qty']
+    ]);
 
-                    $stock = Stock::where('item_name', $itemName)->first();
-                }
+    // =========================
+    // ✅ STOCK FETCH
+    // =========================
+    if ($boqId) {
+        $stock = Stock::where('boq_item_id', $boqId)->first();
+    } else {
+        $stock = Stock::where('item_name', $itemNameFinal)
+            ->whereNull('boq_item_id')
+            ->first();
+    }
 
-                // ❌ Stock not found
-                if (!$stock) {
-                    throw new \Exception("Stock not found for item: " . ($boqId ? "BOQ ID $boqId" : $itemName));
-                }
+    if (!$stock || $stock->available_qty < $item['issued_qty']) {
+        throw new \Exception("Insufficient stock for item: " . $itemNameFinal);
+    }
 
-                // ❌ Insufficient stock
-                if ($stock->available_qty < $item['issued_qty']) {
-                    throw new \Exception("Insufficient stock for item: " . ($boqId ? "BOQ ID $boqId" : $itemName));
-                }
+    // =========================
+    // ✅ STOCK OUT
+    // =========================
+    $stock->decrement('available_qty', $item['issued_qty']);
 
-                // =========================
-                // ✅ SAVE DC OUT ITEM
-                // =========================
-                DcOutItem::create([
-                    'dc_out_id' => $dcOut->id,
-                    'boq_item_id' => $boqId,
-                    'item_name' => $itemName,
-                    'issued_qty' => $item['issued_qty']
-                ]);
-
-                // =========================
-                // 🔥 DECREASE STOCK
-                // =========================
-                $stock->decrement('available_qty', $item['issued_qty']);
-
-                // =========================
-                // 🔥 STOCK TRANSACTION (OUT)
-                // =========================
-                StockTransaction::create([
-                    'boq_item_id' => $boqId,
-                    'item_name' => $boqId ? null : $itemName,
-                    'type' => 'OUT',
-                    'quantity' => $item['issued_qty'],
-                    'reference_type' => 'DC_OUT',
-                    'reference_id' => $dcOut->id
-                ]);
-            }
+    // =========================
+    // ✅ STOCK TRANSACTION
+    // =========================
+    StockTransaction::create([
+        'boq_item_id' => $boqId,
+        'item_name' => $itemNameFinal,
+        'type' => 'OUT',
+        'quantity' => $item['issued_qty'],
+        'reference_type' => 'DC_OUT',
+        'reference_id' => $dcOut->id
+    ]);
+}
 
             DB::commit();
 
@@ -126,6 +126,11 @@ class DcOutController extends Controller
             ], 400);
         }
     }
+
+
+
+
+
 
     // ===============================
     // ✅ LIST ALL DC OUT
