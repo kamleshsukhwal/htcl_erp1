@@ -176,23 +176,38 @@ $this->logAudit('BOQ_ITEM', $itemId, 'DELETE', $oldData, null);
 
     // 🔹 UPDATE BOQ STATUS
     public function updateStatus(Request $request, $boqId)
-    {
-        $request->validate([
-            'status' => 'required|in:draft,submitted,approved'
-        ]);
-  $oldData = $boq->toArray();
-        Boq::where('id', $boqId)->update([
-            'status' => $request->status
-        ]);
+{
+    // ✅ Validation
+    $request->validate([
+        'status' => 'required|in:draft,submitted,approved'
+    ]);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'BOQ status updated' // update item  file
-        ]);
+    // ✅ Fetch BOQ
+    $boq = Boq::findOrFail($boqId);
 
+    // ✅ Store old data for audit
+    $oldData = $boq->toArray();
 
-$this->logAudit('BOQ', $boqId, 'STATUS_UPDATE', $oldData, $boq->fresh()->toArray());
-    }
+    // ✅ Update status
+    $boq->update([
+        'status' => $request->status
+    ]);
+
+    // ✅ Log Audit (AFTER update)
+    $this->logAudit(
+        'BOQ',
+        $boqId,
+        'STATUS_UPDATE',
+        $oldData,
+        $boq->fresh()->toArray()
+    );
+
+    // ✅ Response
+    return response()->json([
+        'status' => true,
+        'message' => 'BOQ status updated successfully'
+    ]);
+}
     // BOQ item upload from file.
 
 
@@ -516,47 +531,65 @@ $this->logAudit('BOQ_ITEM', $item->id, 'BULK_UPDATE', $oldData, $item->fresh()->
     /**** for dashboard usage */
 
 
-    public function status($boq_id)
-    {
-        // 1️⃣ Planned Quantity (BOQ)
-        $plannedQty = DB::table('boq_items')
-            ->where('boq_id', $boq_id)
-            ->sum('quantity');
+     public function status($boq_id)
+{
+    // 1️⃣ Planned Quantity (BOQ)
+    $plannedQty = DB::table('boq_items')
+        ->where('boq_id', $boq_id)
+        ->sum('quantity');
 
-        // 2️⃣ Ordered Quantity (PO)
-        $orderedQty = DB::table('purchase_order_items')
-            ->join('boq_items', 'boq_items.id', '=', 'purchase_order_items.boq_item_id')
-            ->where('boq_items.boq_id', $boq_id)
-            ->sum('purchase_order_items.ordered_qty');
+    // 2️⃣ Ordered Quantity (PO)
+    $orderedQty = DB::table('purchase_order_items')
+        ->join('boq_items', 'boq_items.id', '=', 'purchase_order_items.boq_item_id')
+        ->where('boq_items.boq_id', $boq_id)
+        ->sum('purchase_order_items.ordered_qty');
 
-        // 3️⃣ Received Quantity (DC IN)
-        $receivedQty = DB::table('dc_in_items')
-            ->join('boq_items', 'boq_items.id', '=', 'dc_in_items.boq_item_id')
-            ->where('boq_items.boq_id', $boq_id)
-            ->sum('dc_in_items.supplied_qty');
+    // 3️⃣ Received Quantity (DC IN)
+    $receivedQty = DB::table('dc_in_items')
+        ->join('boq_items', 'boq_items.id', '=', 'dc_in_items.boq_item_id')
+        ->where('boq_items.boq_id', $boq_id)
+        ->sum('dc_in_items.supplied_qty');
 
-        // 4️⃣ Issued Quantity (DC OUT)
-        $issuedQty = DB::table('dc_out_items')
-            ->join('boq_items', 'boq_items.id', '=', 'dc_out_items.boq_item_id')
-            ->where('boq_items.boq_id', $boq_id)
-            ->sum('dc_out_items.issued_qty');
+    // 4️⃣ Issued Quantity (DC OUT)
+    $issuedQty = DB::table('dc_out_items')
+        ->join('boq_items', 'boq_items.id', '=', 'dc_out_items.boq_item_id')
+        ->where('boq_items.boq_id', $boq_id)
+        ->sum('dc_out_items.issued_qty');
 
-        // 5️⃣ Executed Quantity (Installation)
-        $executedQty = DB::table('installations')
-            ->where('boq_id', $boq_id)
-            ->sum('executed_qty');
+    // 5️⃣ Executed Quantity (Progress / Installation)
+    $executedQty = DB::table('boq_item_progress') // 🔥 FIX (use your real table)
+        ->join('boq_items', 'boq_items.id', '=', 'boq_item_progress.boq_item_id')
+        ->where('boq_items.boq_id', $boq_id)
+        ->sum('boq_item_progress.executed_qty');
 
-        return response()->json([
-            'boq_id'        => $boq_id,
-            'planned_qty'   => $plannedQty ?? 0,
-            'ordered_qty'   => $orderedQty ?? 0,
-            'received_qty'  => $receivedQty ?? 0,
-            'issued_qty'    => $issuedQty ?? 0,
-            'executed_qty'  => $executedQty ?? 0,
-            'balance_qty'   => ($plannedQty ?? 0) - ($executedQty ?? 0),
-            'stock_available' => ($receivedQty ?? 0) - ($issuedQty ?? 0),
-        ]);
-    }
+    // =========================
+    // 🔥 CALCULATIONS
+    // =========================
+
+    $plannedQty = $plannedQty ?? 0;
+    $executedQty = $executedQty ?? 0;
+
+    // ✅ Completion %
+    $completionPercent = $plannedQty > 0
+        ? round(($executedQty / $plannedQty) * 100, 2)
+        : 0;
+
+    return response()->json([
+        'boq_id' => $boq_id,
+
+        // Raw Data
+        'planned_qty'   => $plannedQty,
+        'ordered_qty'   => $orderedQty ?? 0,
+        'received_qty'  => $receivedQty ?? 0,
+        'issued_qty'    => $issuedQty ?? 0,
+        'executed_qty'  => $executedQty,
+
+        // Calculated
+        'balance_qty'       => $plannedQty - $executedQty,
+        'stock_available'   => $receivedQty - $issuedQty,
+        'completion_percent' => $completionPercent . '%'
+    ]);
+}
 
 
 

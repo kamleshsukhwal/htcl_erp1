@@ -66,7 +66,6 @@ public function index()
         'is_manual'         => $item['is_manual'] ?? 0, // ✅ key line
     ]);
 }
-
             DB::commit();
 
             return response()->json([
@@ -126,4 +125,3 @@ public function approve($id)
 }
 
 }
-
