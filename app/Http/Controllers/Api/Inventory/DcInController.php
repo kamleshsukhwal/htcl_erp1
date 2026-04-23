@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 class DcInController extends Controller
 {
    
+public function store(Request $request)
+{
         // ✅ Normalize items
         $items = collect($request->items)->map(function ($item) {
 
@@ -111,7 +113,7 @@ class DcInController extends Controller
 // =========================
 // 🔥 UPDATE PO STATUS
 // =========================
-$totalOrdered = \App\Models\PurchaseOrderItem::where('po_id', $request->po_id)
+$totalOrdered = \App\Models\PurchaseOrderItem::where('purchase_order_id', $request->po_id)
     ->sum('qty');
 
 $totalReceived = \App\Models\DcInItem::whereHas('dcIn', function ($q) use ($request) {
@@ -154,7 +156,7 @@ if ($totalOrdered == 0) {
             'status' => true,
             'message' => 'DC IN saved successfully'
         ]);
-    
+}
 
     // ===============================
     // ✅ LIST DC IN
