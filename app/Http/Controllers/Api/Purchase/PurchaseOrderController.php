@@ -13,13 +13,17 @@ use Illuminate\Support\Facades\DB;
    class PurchaseOrderController extends Controller
 {
    
-  public function index()
-    {
-        return PurchaseOrder::where('status',1)->get();
+public function index()
+{
+    $data = PurchaseOrder::where('status', 1)
+        ->withCount('items')
+        ->get();
 
-
-       
-    }
+    return response()->json([
+        'status' => true,
+        'data' => $data
+    ]);
+}
 
 
      public function store(Request $request)

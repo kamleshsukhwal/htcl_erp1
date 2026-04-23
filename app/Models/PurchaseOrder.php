@@ -14,12 +14,13 @@ class PurchaseOrder extends Model
         //'boq_id',
     ];
 
-    public function items()
-    {
-        return $this->hasMany(PurchaseOrderItem::class);
-    }
+  public function items()
+{
+    return $this->hasMany(\App\Models\PurchaseOrderItem::class, 'purchase_order_id');
+}
     public function invoice()
 {
     return $this->hasOne(\App\Models\Invoice::class, 'po_id', 'id');
 }
 }
+
