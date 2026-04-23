@@ -128,7 +128,7 @@ Route::get('/vendor-payments/history/{poId}', [VendorPaymentController::class, '
         Route::post('/', [DcInController::class, 'store']); // DC entry
         Route::get('/', [DcInController::class, 'index']);
         Route::get('/{id}', [DcInController::class, 'show']);
-
+Route::get('/list/dropdown', [DcInController::class, 'dropdownfordcout']); // used for DCOUt dropdown
         Route::get('/project/{project_id}', [DcInController::class, 'byProject']);
 Route::get('/{id}/items-stock', [DcInController::class, 'getDcinItemsWithStock']);
         

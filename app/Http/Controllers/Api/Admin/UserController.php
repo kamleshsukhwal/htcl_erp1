@@ -14,6 +14,8 @@ class UserController extends Controller
     public function index()
     {
         return User::with('roles')->get();
+
+   // dd($users);
     }
 
     public function store(Request $request)

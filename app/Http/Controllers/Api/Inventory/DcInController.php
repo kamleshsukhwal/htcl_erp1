@@ -213,4 +213,20 @@ class DcInController extends Controller
         'data' => $items
     ]);
 }
+
+
+
+
+public function dropdownfordcout()
+{
+    $data = DcIn::select('id', 'dc_number')
+        ->withCount('items') // 🔥 counts dc_in_items
+        ->latest()
+        ->get();
+
+    return response()->json([
+        'status' => true,
+        'data' => $data
+    ]);
+}
 }
