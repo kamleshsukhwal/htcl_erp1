@@ -5,13 +5,13 @@ use App\Http\Controllers\Api\Quality\AuditLogController;
 use App\Http\Controllers\Api\Quality\NcrController;
 use App\Http\Controllers\Api\Quality\QaChecklistController;
 use App\Http\Controllers\Api\Quality\QaInspectionController;
-use App\Http\Controllers\Api\Quality\QaInspectionController as QualityQaInspectionController;
+//use App\Http\Controllers\Api\Quality\QaInspectionController as QualityQaInspectionController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\LazyCollection;
 
 /*
 |--------------------------------------------------------------------------
-| QA MANAGEMENT MODULE (Professional Structure)
+| QA MANAGEMENT MODULE
 |--------------------------------------------------------------------------
 */
 
