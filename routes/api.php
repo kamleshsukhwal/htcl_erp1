@@ -110,8 +110,8 @@ Route::get('/check-session', [AuthController::class, 'checkSession'])
     Route::get('/feedback', [FeedbackController::class, 'index']);
     Route::get('/feedback/filter', [FeedbackController::class, 'filterByDate']);
 
-
-
+Route::post('/change-password', [AuthController::class, 'changePassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
  /*
     |--------------------------------------------------------------------------
