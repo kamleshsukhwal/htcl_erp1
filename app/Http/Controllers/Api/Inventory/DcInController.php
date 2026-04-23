@@ -119,25 +119,24 @@ public function store(Request $request)
         // 🔥 UPDATE PO STATUS (FINAL FIX)
         // =========================
 
-        $totalOrdered = \App\Models\PurchaseOrderItem::where('purchase_order_id', $request->po_id)
-            ->sum('ordered_qty');
+       $totalOrdered = \App\Models\PurchaseOrderItem::where('purchase_order_id', $request->po_id)
+    ->sum('ordered_qty');
 
-        $totalReceived = \App\Models\DcInItem::whereHas('dcIn', function ($q) use ($request) {
-            $q->where('purchase_order_id', $request->po_id);
-        })->sum('supplied_qty');
+$totalReceived = \App\Models\DcInItem::whereHas('dcIn', function ($q) use ($request) {
+    $q->where('purchase_order_id', $request->po_id);
+})->sum('supplied_qty');
 
-        if ($totalOrdered == 0) {
-            $status = 'pending';
-        } elseif ($totalReceived == 0) {
-            $status = 'pending';
-        } elseif ($totalReceived < $totalOrdered) {
-            $status = 'partial';
-        } else {
-            $status = 'completed';
-        }
+// ✅ FINAL STATUS LOGIC
+if ($totalReceived == 0) {
+    $status = 'pending';
+} elseif ($totalReceived < $totalOrdered) {
+    $status = 'approved';
+} else {
+    $status = 'closed';
+}
 
-        \App\Models\PurchaseOrder::where('id', $request->po_id)
-            ->update(['status' => $status]);
+\App\Models\PurchaseOrder::where('id', $request->po_id)
+    ->update(['status' => $status]);
     });
 
     return response()->json([
