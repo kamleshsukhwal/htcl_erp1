@@ -14,8 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class DcInController extends Controller
 {
-    public function store(Request $request)
-    {
+   
         // ✅ Normalize items
         $items = collect($request->items)->map(function ($item) {
 
@@ -155,7 +154,7 @@ if ($totalOrdered == 0) {
             'status' => true,
             'message' => 'DC IN saved successfully'
         ]);
-    }
+    
 
     // ===============================
     // ✅ LIST DC IN
