@@ -13,15 +13,16 @@ class DcInItem extends Model
          'item_name'
     ];
 
-    // Relationship with DC In
-    public function dcIn()
-    {
-        return $this->belongsTo(DcIn::class);
-    }
+   
 
     // Relationship with BOQ Item
     public function boqItem()
     {
         return $this->belongsTo(BoqItem::class);
     }
+
+    public function dcIn()
+{
+    return $this->belongsTo(DcIn::class, 'dc_in_id');
+}
 }

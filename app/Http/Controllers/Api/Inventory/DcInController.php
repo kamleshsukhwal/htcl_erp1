@@ -109,7 +109,30 @@ class DcInController extends Controller
                     'reference_type' => 'DC_IN',
                     'reference_id' => $dc->id
                 ]);
+// =========================
+// 🔥 UPDATE PO STATUS
+// =========================
+$totalOrdered = \App\Models\PurchaseOrderItem::where('po_id', $request->po_id)
+    ->sum('qty');
 
+$totalReceived = \App\Models\DcInItem::whereHas('dcIn', function ($q) use ($request) {
+    $q->where('purchase_order_id', $request->po_id);
+})->sum('supplied_qty');
+
+// ✅ Decide status
+if ($totalOrdered == 0) {
+    $status = 'pending'; // fallback safety
+} elseif ($totalReceived == 0) {
+    $status = 'pending';
+} elseif ($totalReceived < $totalOrdered) {
+    $status = 'partial';
+} else {
+    $status = 'completed';
+}
+
+ 
+\App\Models\PurchaseOrder::where('id', $request->po_id)
+    ->update(['status' => $status]);
                 // =========================
                 // ✅ BOQ PROGRESS
                 // =========================
