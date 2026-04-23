@@ -9,10 +9,13 @@ use App\Models\Employee_profile;
 use App\Models\Employee_document;
 use App\Models\Attendence;
 use App\Models\LeaveApplication;
+use App\Models\LetterFormat;
+use App\Models\Employee_department;
 class Employee extends Model
 {
     /** @use HasFactory<\Database\Factories\EmployeeFactory> */
     use HasFactory;
+    protected $table = 'employees';
     protected $fillable = [
         'id',
         'name',
@@ -42,5 +45,14 @@ class Employee extends Model
 
     public function leaveApplication(){
         return $this->hasMany(LeaveApplication::class,'employee_id');
+    }
+
+    public function hrletterformat(){
+        return $this->hasMany(LetterFormat::class,'employee_id');
+    }
+
+    public function employeeDepartments()
+    {
+        return $this->hasMany(Employee_department::class,'employee_id');
     }
 }

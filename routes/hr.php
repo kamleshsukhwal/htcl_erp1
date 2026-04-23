@@ -11,6 +11,10 @@ use App\Http\Controllers\Api\HR\LeaveTypeController;
 use App\Http\Controllers\Api\HR\LeaveApplicationController;
 use App\Http\Controllers\Api\HR\PublicHolidayController;
 // use App\Models\Employee_document;
+use App\Http\Controllers\Api\HR\LetterFormatController;
+// use App\Http\Controllers\DepartmentsController;
+use App\Http\Controllers\Api\HR\DepartmentsController;
+use App\Http\Controllers\Api\HR\EmployeeDepartmentController;
 
 Route::prefix('hr')->group(function () {
     Route::post('/', [EmployeeController::class, 'store'])->middleware('auth:sanctum');
@@ -44,7 +48,10 @@ Route::prefix('hr/employee_profiles')->group(function () {
     Route::put('/{employee_id}',[EmployeeProfileController::class,'update'])->middleware('auth:sanctum');
     
     Route::delete('/{employee_id}',[EmployeeProfileController::class,'destroy'])->middleware('auth:sanctum');
-});
+
+    Route::get('/{department_id}',[EmployeeProfileController::class,'showDepartment'])->middleware('auth:sanctum');
+
+ });
 
 Route::prefix('hr/employee_documents')->group(function () {
     Route::post('/{employee_id}',[EmployeeDocumentController::class,'store'])->middleware('auth:sanctum');
@@ -94,4 +101,38 @@ Route::prefix('hr/public_holiday')->group(function(){
     Route::put('/{id}',[PublicHolidayController::class,'update'])->middleware('auth:sanctum');
     
     Route::delete('/{id}',[PublicHolidayController::class,'destroy'])->middleware('auth:sanctum');
+});
+
+Route::prefix('hr/letter_format')->group(function(){
+    Route::post('/',[LetterFormatController::class,'store'])->middleware('auth:sanctum');
+    
+    Route::get('/{id}',[LetterFormatController::class,'show'])->middleware('auth:sanctum');
+    
+    Route::put('/{id}',[LetterFormatController::class,'update'])->middleware('auth:sanctum');
+    
+    Route::delete('/{id}',[LetterFormatController::class,'destroy'])->middleware('auth:sanctum');
+});
+
+Route::prefix('hr/department')->group(function () {
+    Route::get('/', [DepartmentsController::class, 'index'])->middleware('auth:sanctum');
+   
+    Route::post('/', [DepartmentsController::class, 'store'])->middleware('auth:sanctum');
+   
+    Route::get('/{id}', [DepartmentsController::class, 'show'])->middleware('auth:sanctum');
+   
+    Route::put('/{id}', [DepartmentsController::class, 'update'])->middleware('auth:sanctum');
+   
+    Route::delete('/{id}', [DepartmentsController::class, 'destroy'])->middleware('auth:sanctum');
+});
+
+Route::prefix('hr/employee_department')->group(function () {
+    Route::post('/', [EmployeeDepartmentController::class, 'store'])->middleware('auth:sanctum');
+
+    Route::get('/{id}', [EmployeeDepartmentController::class, 'show'])->middleware('auth:sanctum');
+
+    Route::put('/{id}', [EmployeeDepartmentController::class, 'update'])->middleware('auth:sanctum');
+
+    Route::delete('/id/', [EmployeeDepartmentController::class, 'destroy'])->middleware('auth:sanctum');
+    
+    
 });

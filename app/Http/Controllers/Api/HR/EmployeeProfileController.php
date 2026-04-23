@@ -32,6 +32,7 @@ class EmployeeProfileController extends Controller
         //Store the request data in database
         $validate = $request->validate([
             'employee_id' => 'required|exists:employees,id',
+            'department_id' => 'required|exists:department,id',
             'aadhar_number' => 'required|string|max:12',
             'pan_number' => 'required|string|max:10',
             'employement_type' => 'required|string',
@@ -48,7 +49,35 @@ class EmployeeProfileController extends Controller
             "data"=> $validate
         ]);
     }
-
+    public function showDepartment($id){
+        $employeeProfile = Employee_profile::where('department_id',$id)->get();
+        if($employeeProfile->isEmpty()){
+            return response()->json([
+                'status'=>false,
+                "message"=>"No employee profiles found for the given department"
+            ],status:404);
+        }
+        return response()->json([
+            'status'=>true,
+            "message"=>"Successfully retrieved employee profiles for the department",
+            "data"=>[
+                'employee_details'=>$employeeProfile->map(function($profile){
+                    return [
+                        'employee_id'=>$profile->employee_id,
+                        'department_id'=>$profile->department_id,
+                        'department_name'=>$profile->department ? $profile->department->department_name : null,
+                        'aadhar_number'=>$profile->aadhar_number,
+                        'pan_number'=>$profile->pan_number,
+                        'employement_type'=>$profile->employement_type,
+                        'degree_name'=>$profile->degree_name,
+                        'college_name'=>$profile->college_name,
+                        'year_of_passing'=>$profile->year_of_passing,
+                        'experience'=>$profile->experience
+                    ];
+                })
+            ]
+        ]);
+    }
     /**
      * Display the specified resource.
      */

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\HR;
 
 use App\Http\Controllers\Controller;
-use App\Models\employee_document;
+use App\Models\Employee_document;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -62,7 +62,7 @@ class EmployeeDocumentController extends Controller
 
         foreach ($request->file('documents') as $type => $file) {
             //Checking whether the document type already exist for the employee or not
-            $exist = employee_document::where('employee_id', $employee_id)->where('document_type', $type)->exists();
+            $exist = Employee_document::where('employee_id', $employee_id)->where('document_type', $type)->exists();
             if ($exist) {
                 return response()->json([
                     'status' => false,
@@ -74,7 +74,7 @@ class EmployeeDocumentController extends Controller
 
             $path = $file->storeAs("Employee_documents/$employee_id", $document_name, 'public');
 
-            employee_document::create([
+            Employee_document::create([
                 'employee_id' => $employee_id,
                 'document_name' => $document_name,
                 'document_path' => $path,
