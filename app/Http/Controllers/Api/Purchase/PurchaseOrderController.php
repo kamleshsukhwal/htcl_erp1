@@ -15,8 +15,7 @@ use Illuminate\Support\Facades\DB;
    
 public function index()
 {
-    $data = PurchaseOrder::where('status', 1)
-        ->withCount('items')
+    $data = PurchaseOrder::withCount('items')
         ->get();
 
     return response()->json([
