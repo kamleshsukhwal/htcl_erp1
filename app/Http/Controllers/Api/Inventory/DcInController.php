@@ -132,7 +132,7 @@ if ($totalReceived == 0) {
 } elseif ($totalReceived < $totalOrdered) {
     $status = 'approved';
 } else {
-    $status = 'closed';
+    $status = 'completed';
 }
 
 \App\Models\PurchaseOrder::where('id', $request->po_id)
