@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+ 
 
 class AuthController extends Controller
 {
@@ -131,6 +133,77 @@ public function checkSession(Request $request)
     return response()->json([
         'status' => true,
         'message' => 'Session valid'
+    ]);
+}
+
+
+
+public function forgotPassword(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email|exists:users,email'
+    ]);
+
+    $status = Password::sendResetLink(
+        $request->only('email')
+    );
+
+    return response()->json([
+        'status' => true,
+        'message' => __($status)
+    ]);
+}
+
+
+
+public function resetPassword(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email',
+        'token' => 'required',
+        'password' => 'required|min:6|confirmed'
+    ]);
+
+    $status = Password::reset(
+        $request->only('email', 'password', 'password_confirmation', 'token'),
+        function ($user, $password) {
+            $user->forceFill([
+                'password' => Hash::make($password)
+            ])->save();
+        }
+    );
+
+    return response()->json([
+        'status' => $status === Password::PASSWORD_RESET,
+        'message' => __($status)
+    ]);
+}
+
+
+
+public function changePassword(Request $request)
+{
+    $request->validate([
+        'current_password' => 'required',
+        'new_password' => 'required|min:6|confirmed'
+    ]);
+
+    $user = auth()->user();
+
+    if (!Hash::check($request->current_password, $user->password)) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Current password is incorrect'
+        ], 400);
+    }
+
+    $user->update([
+        'password' => Hash::make($request->new_password)
+    ]);
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Password changed successfully'
     ]);
 }
 }

@@ -111,6 +111,8 @@ Route::get('/check-session', [AuthController::class, 'checkSession'])
     Route::get('/feedback/filter', [FeedbackController::class, 'filterByDate']);
 
 
+
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
  /*
     |--------------------------------------------------------------------------
     | Module Stock add update while DC IN DC-OUT
