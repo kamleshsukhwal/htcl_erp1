@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\LoginHistory;
 use App\Models\User;
 use App\Traits\SendEmail;
 use Illuminate\Http\Request;
@@ -31,6 +32,8 @@ public function index()
                 'roles' => $user->roles->pluck('name'),
 
                 // last login
+               'is_active' => $user->is_active,
+               //'last_login' => $user->last_login_at,
                 'last_login' => $user->last_login_at,
             ];
         });
@@ -108,4 +111,37 @@ public function index()
 
         return response()->json(['status' => true]);
     }
+
+
+public function loginHistory($userId)
+{
+    $history = LoginHistory::where('user_id', $userId)
+        ->latest()
+        ->get();
+
+    return response()->json([
+        'status' => true,
+        'data' => $history
+    ]);
+}
+
+
+
+public function toggleStatus($id)
+{
+    $user = User::findOrFail($id);
+
+    $user->is_active = !$user->is_active;
+    $user->save();
+
+    // Optional: logout user if deactivated
+    if (!$user->is_active) {
+        $user->tokens()->delete();
+    }
+
+    return response()->json([
+        'status' => true,
+        'message' => $user->is_active ? 'User Activated' : 'User Deactivated'
+    ]);
+}
 }

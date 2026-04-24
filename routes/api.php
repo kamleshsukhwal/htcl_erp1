@@ -78,11 +78,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::post('/logout', [AuthController::class, 'logout']);
-
+Route::post('/users/{id}/toggle-status', [UserController::class, 'toggleStatus']); // for active inactive
     Route::apiResource('clients', ClientController::class);
 
     Route::get('/users', [UserController::class, 'index'])
         ->middleware('permission:user.view');
+
+        Route::get('/users/{id}/login-history', [UserController::class, 'loginHistory']);
     Route::post('/users', [UserController::class, 'store']);
     Route::post('/users/{id}/roles', [UserController::class, 'assignRole']);
 Route::get('/check-session', [AuthController::class, 'checkSession'])

@@ -8,6 +8,7 @@ use App\Models\DcIn;
 use App\Models\DcInItem;
 use App\Models\Stock;
 use App\Models\BoqItem;
+use App\Models\DcOut;
 use App\Models\StockTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -227,11 +228,16 @@ if ($totalReceived == 0) {
 
 
 
-
+/** remove already created DCOUT and show the dropdown list */
 public function dropdownfordcout()
 {
+    // ✅ Get used DC numbers from DC OUT
+    $usedDcNumbers = DcOut::pluck('dc_number')->filter();
+
+    // ✅ Fetch DC IN excluding used DC numbers
     $data = DcIn::select('id', 'dc_number')
-        ->withCount('items') // 🔥 counts dc_in_items
+        ->whereNotIn('dc_number', $usedDcNumbers)
+        ->withCount('items')
         ->latest()
         ->get();
 

@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
-use Carbon\Carbon; 
+use Carbon\Carbon;
+use App\Models\LoginHistory; 
 
 class AuthController extends Controller
 {
@@ -64,7 +65,7 @@ class AuthController extends Controller
         ]);
     }*/
 
-        public function login(Request $request)
+     public function login(Request $request)
 {
     $request->validate([
         'email'    => 'required|email',
@@ -75,30 +76,46 @@ class AuthController extends Controller
 
     if (!$user) {
         return response()->json([
-            'status'  => false,
+            'status' => false,
             'message' => 'User not found'
         ], 404);
     }
 
-if (!Hash::check($request->password, $user->password)) {
-    return response()->json([
-        'status'  => false,
-        'message' => 'Invalid credentials'
-    ], 401);
-}
+    // ❌ BLOCK INACTIVE USER
+    if (!$user->is_active) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Your account is inactive. Contact admin.'
+        ], 403);
+    }
 
-// ✅ ADD THIS LINE (important)
-$user->last_login_at = Carbon::now();
-$user->save();
+    // Password check
+    if (!Hash::check($request->password, $user->password)) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Invalid credentials'
+        ], 401);
+    }
 
-    // Create new token
+    // ✅ Create token (ONLY ONCE)
     $token = $user->createToken('erp-token');
-
     $plainTextToken = $token->plainTextToken;
 
-    // Save token in users table
-    $user->session_token = $token->accessToken->id;
+    // ✅ Update last login
+    $user->last_login_at = Carbon::now();
+
+    // ✅ Save session token (Sanctum safe)
+    $user->session_token = $user->currentAccessToken()->id ?? null;
+
     $user->save();
+
+    // ✅ STORE LOGIN HISTORY
+    LoginHistory::create([
+        'user_id' => $user->id,
+        'ip_address' => $request->ip(),
+        'user_agent' => $request->header('User-Agent'),
+        'login_at' => Carbon::now()
+    ]);
 
     // Roles & Permissions
     $roles       = $user->getRoleNames();
@@ -112,7 +129,8 @@ $user->save();
             'id'    => $user->id,
             'name'  => $user->name,
             'email' => $user->email,
-            'role'  => $role
+            'role'  => $role,
+            'last_login' => $user->last_login_at
         ],
         'roles'       => $roles,
         'permissions' => $permissions
@@ -207,6 +225,28 @@ public function changePassword(Request $request)
     return response()->json([
         'status' => true,
         'message' => 'Password changed successfully'
+    ]);
+}
+
+
+public function logout(Request $request)
+{
+    $user = $request->user();
+
+    // ✅ Update last login history logout time
+    LoginHistory::where('user_id', $user->id)
+        ->whereNull('logout_at')
+        ->latest()
+        ->first()
+        ?->update([
+            'logout_at' => now()
+        ]);
+
+    $user->tokens()->delete();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Logged out successfully'
     ]);
 }
 }
