@@ -30,4 +30,23 @@ class UserController extends Controller
         'data' => $users
     ]);
 }
+
+
+public function toggleStatus($id)
+{
+    $user = User::findOrFail($id);
+
+    $user->is_active = !$user->is_active;
+    $user->save();
+
+    // Optional: logout user if deactivated
+    if (!$user->is_active) {
+        $user->tokens()->delete();
+    }
+
+    return response()->json([
+        'status' => true,
+        'message' => $user->is_active ? 'User Activated' : 'User Deactivated'
+    ]);
+}
 }
