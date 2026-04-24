@@ -12,120 +12,133 @@ use Illuminate\Support\Facades\DB;
    use App\Models\BoqItem;
 class DcOutController extends Controller
 {
-    public function store(Request $request)
-    {
-        // ✅ Normalize items (same as DCIN)
-        $items = collect($request->items)->map(function ($item) {
+   public function store(Request $request)
+{
+    // ✅ Normalize items
+    $items = collect($request->items)->map(function ($item) {
 
-            $boqId = $item['boq_item_id'] ?? null;
+        $boqId = $item['boq_item_id'] ?? null;
 
-            if (empty($boqId) || $boqId == 0 || $boqId === "0") {
-                $item['boq_item_id'] = null;
-            } else {
-                $item['boq_item_id'] = (int) $boqId;
-            }
+        if (empty($boqId) || $boqId == 0 || $boqId === "0") {
+            $item['boq_item_id'] = null;
+        } else {
+            $item['boq_item_id'] = (int) $boqId;
+        }
 
-            return $item;
+        return $item;
 
-        })->toArray();
+    })->toArray();
 
-        $request->merge(['items' => $items]);
+    $request->merge(['items' => $items]);
 
-        // ✅ Validation
-        $request->validate([
-            'project_id' => 'required|exists:projects,id',
-            'issue_date' => 'required|date',
-            'issued_to' => 'required|string',
-            'items' => 'required|array',
-            'items.*.boq_item_id' => 'nullable|exists:boq_items,id',
-            'items.*.item_name' => 'required_without:items.*.boq_item_id',
-            'items.*.issued_qty' => 'required|numeric|min:0.01',
+    // ✅ Validation
+    $request->validate([
+        'project_id' => 'required|exists:projects,id',
+        'issue_date' => 'required|date',
+        'issued_to' => 'required|string',
+        'items' => 'required|array',
+        'items.*.boq_item_id' => 'nullable|exists:boq_items,id',
+        'items.*.item_name' => 'required_without:items.*.boq_item_id',
+        'items.*.issued_qty' => 'required|numeric|min:0.01',
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+
+        // ✅ Better DC Number
+        $dcNumber = 'DCOUT-' . date('Ymd') . '-' . rand(1000, 9999);
+
+        // ✅ Create DC OUT
+        $dcOut = DcOut::create([
+            'dc_number' => $dcNumber,
+            'project_id' => $request->project_id,
+            'issue_date' => $request->issue_date,
+            'issued_to' => $request->issued_to,
+            'created_by' => auth()->id() ?? null
         ]);
 
-        DB::beginTransaction();
+        // ✅ Fetch all BOQ items in one query (performance fix)
+        $boqIds = collect($items)->pluck('boq_item_id')->filter()->unique();
 
-        try {
+        $boqItems = BoqItem::whereIn('id', $boqIds)
+            ->get()
+            ->keyBy('id');
 
-            // ✅ Create DC OUT
-            $dcOut = DcOut::create([
-                'dc_number' => 'DCOUT-' . time(),
-                'project_id' => $request->project_id,
-                'issue_date' => $request->issue_date,
-                'issued_to' => $request->issued_to
+        foreach ($items as $item) {
+
+            $boqId = $item['boq_item_id'] ?? null;
+            $itemName = $item['item_name'] ?? null;
+
+            // ✅ Final Item Name
+            $itemNameFinal = $boqId
+                ? optional($boqItems[$boqId] ?? null)->item_name
+                : $itemName;
+
+            // =========================
+            // ✅ SAVE DC OUT ITEM
+            // =========================
+            DcOutItem::create([
+                'dc_out_id' => $dcOut->id,
+                'boq_item_id' => $boqId,
+                'item_name' => $itemNameFinal,
+                'issued_qty' => $item['issued_qty']
             ]);
 
-        
+            // =========================
+            // ✅ STOCK FETCH WITH LOCK
+            // =========================
+            $stock = $boqId
+                ? Stock::where('boq_item_id', $boqId)->lockForUpdate()->first()
+                : Stock::where('item_name', $itemNameFinal)
+                    ->whereNull('boq_item_id')
+                    ->lockForUpdate()
+                    ->first();
 
-foreach ($items as $item) {
+            if (!$stock || $stock->available_qty < $item['issued_qty']) {
+                throw new \Exception("Insufficient stock for item: " . $itemNameFinal);
+            }
 
-    $boqId = $item['boq_item_id'] ?? null;
-    $itemName = $item['item_name'] ?? null;
+            // =========================
+            // ✅ STOCK OUT
+            // =========================
+            $stock->decrement('available_qty', $item['issued_qty']);
 
-    // ✅ FINAL NAME
-    $itemNameFinal = $boqId
-        ? optional(BoqItem::find($boqId))->item_name
-        : $itemName;
-
-    // =========================
-    // ✅ SAVE DC OUT ITEM
-    // =========================
-    DcOutItem::create([
-        'dc_out_id' => $dcOut->id,
-        'boq_item_id' => $boqId,
-        'item_name' => $itemNameFinal, // ✅ IMPORTANT
-        'issued_qty' => $item['issued_qty']
-    ]);
-
-    // =========================
-    // ✅ STOCK FETCH
-    // =========================
-    if ($boqId) {
-        $stock = Stock::where('boq_item_id', $boqId)->first();
-    } else {
-        $stock = Stock::where('item_name', $itemNameFinal)
-            ->whereNull('boq_item_id')
-            ->first();
-    }
-
-    if (!$stock || $stock->available_qty < $item['issued_qty']) {
-        throw new \Exception("Insufficient stock for item: " . $itemNameFinal);
-    }
-
-    // =========================
-    // ✅ STOCK OUT
-    // =========================
-    $stock->decrement('available_qty', $item['issued_qty']);
-
-    // =========================
-    // ✅ STOCK TRANSACTION
-    // =========================
-    StockTransaction::create([
-        'boq_item_id' => $boqId,
-        'item_name' => $itemNameFinal,
-        'type' => 'OUT',
-        'quantity' => $item['issued_qty'],
-        'reference_type' => 'DC_OUT',
-        'reference_id' => $dcOut->id
-    ]);
-}
-
-            DB::commit();
-
-            return response()->json([
-                'status' => true,
-                'message' => 'DC OUT Created Successfully'
+            // =========================
+            // ✅ STOCK TRANSACTION
+            // =========================
+            StockTransaction::create([
+                'boq_item_id' => $boqId,
+                'item_name' => $itemNameFinal,
+                'type' => 'OUT',
+                'quantity' => $item['issued_qty'],
+                'reference_type' => 'DC_OUT',
+                'reference_id' => $dcOut->id,
+                'created_by' => auth()->id() ?? null
             ]);
-
-        } catch (\Exception $e) {
-
-            DB::rollBack();
-
-            return response()->json([
-                'status' => false,
-                'message' => $e->getMessage()
-            ], 400);
         }
+
+        DB::commit();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'DC OUT Created Successfully',
+            'data' => [
+                'dc_out_id' => $dcOut->id,
+                'dc_number' => $dcOut->dc_number
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        return response()->json([
+            'status' => false,
+            'message' => $e->getMessage()
+        ], 400);
     }
+}
 
 
 
