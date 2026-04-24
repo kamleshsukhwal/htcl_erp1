@@ -11,13 +11,35 @@ use App\Models\Role;
 class UserController extends Controller
 {
     use SendEmail;
-    public function index()
+   /* public function index()
     {
         return User::with('roles')->get();
 
    // dd($users);
-    }
+    }*/
+public function index()
+{
+    $users = User::with('roles')
+        ->get()
+        ->map(function ($user) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
 
+                // roles as array
+                'roles' => $user->roles->pluck('name'),
+
+                // last login
+                'last_login' => $user->last_login_at,
+            ];
+        });
+
+    return response()->json([
+        'status' => true,
+        'data' => $users
+    ]);
+}
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
