@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Model;
     protected $fillable = [
         'dc_out_id',
         'boq_item_id',
-        'issued_qty'
+        'issued_qty',
+        'item_name'
     ];
 
    
