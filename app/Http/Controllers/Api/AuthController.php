@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
- 
+use Carbon\Carbon; 
 
 class AuthController extends Controller
 {
@@ -80,12 +80,16 @@ class AuthController extends Controller
         ], 404);
     }
 
-    if (!Hash::check($request->password, $user->password)) {
-        return response()->json([
-            'status'  => false,
-            'message' => 'Invalid credentials'
-        ], 401);
-    }
+if (!Hash::check($request->password, $user->password)) {
+    return response()->json([
+        'status'  => false,
+        'message' => 'Invalid credentials'
+    ], 401);
+}
+
+// ✅ ADD THIS LINE (important)
+$user->last_login_at = Carbon::now();
+$user->save();
 
     // Create new token
     $token = $user->createToken('erp-token');
@@ -153,7 +157,6 @@ public function forgotPassword(Request $request)
         'message' => __($status)
     ]);
 }
-
 
 
 public function resetPassword(Request $request)
