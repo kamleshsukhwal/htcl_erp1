@@ -144,14 +144,14 @@ public function checkSession(Request $request)
 
     $currentTokenId = $request->user()->currentAccessToken()->id;
 
-    if ($user->session_token != $currentTokenId) {
+  /*  if ($user->session_token != $currentTokenId) {
 
         return response()->json([
             'status' => false,
             'message' => 'Same user already logged in another browser/device'
         ]);
     }
-
+*/
     return response()->json([
         'status' => true,
         'message' => 'Session valid'
