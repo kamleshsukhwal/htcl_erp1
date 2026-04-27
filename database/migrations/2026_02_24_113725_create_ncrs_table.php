@@ -9,9 +9,10 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up():  void
     {
-        Schema::create('ncrs', function (Blueprint $table) {
+
+    Schema::create('ncrs', function (Blueprint $table) {
     $table->id();
     $table->unsignedBigInteger('project_id');
     $table->unsignedBigInteger('boq_item_id');

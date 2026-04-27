@@ -31,12 +31,12 @@ public function index()
     'po_number'     => 'required|string|unique:purchase_orders',
     'project_id'    => 'required|integer',
     'order_date'    => 'required|date',
-
+    'devlivery_address' => 'nullable|string',
     'total_amount'  => 'required|numeric',
     'gst_amount'    => 'nullable|numeric',
     't_c'           => 'nullable|string',
     'notes'         => 'nullable|string',
-
+    'deliver_to'    => 'nullable|string',
     'status'        => 'required|string',
 
     'items'                     => 'required|array|min:1',
@@ -72,6 +72,7 @@ try {
         'order_date'    => $request->order_date,
         'total_amount'  => $finalTotal,   // ✅ storing final amount
         'gst_amount'    => $gstAmount,
+        'deliver_to' =>    $request->deliver_to,
         'status'        => $request->status,
         't_c'           => $request->t_c,
         'notes'         => $request->notes,
