@@ -13,7 +13,8 @@ class PurchaseOrder extends Model
     'gst_amount',
     'status',
     't_c',
-    'notes'
+    'notes',
+    'deliver_to'
 ];
 
   public function items()
@@ -25,4 +26,3 @@ class PurchaseOrder extends Model
     return $this->hasOne(\App\Models\Invoice::class, 'po_id', 'id');
 }
 }
-
