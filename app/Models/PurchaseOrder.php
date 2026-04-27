@@ -4,17 +4,24 @@ use Illuminate\Database\Eloquent\Model;
 
 class PurchaseOrder extends Model
 {
-   protected $fillable = [
-    'vendor_id',
-    'po_number',
-    'project_id',
-    'order_date',
-    'total_amount',
-    'gst_amount',
-    'status',
-    't_c',
-    'notes',
-    'deliver_to'
+ 
+  protected $fillable = [
+        'vendor_id',
+        'po_number',
+        'project_id',
+        'order_date',
+
+        // ✅ NEW FIELDS
+        'delivery_date',
+        'approved_by',
+        'approved_status',
+
+        'total_amount',
+        'gst_amount',
+        'deliver_to',
+        'status',
+        't_c',
+        'notes',
 ];
 
   public function items()
@@ -25,4 +32,10 @@ class PurchaseOrder extends Model
 {
     return $this->hasOne(\App\Models\Invoice::class, 'po_id', 'id');
 }
+
+   // 🔗 Optional: who approved
+    public function approvedUser()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
 }
