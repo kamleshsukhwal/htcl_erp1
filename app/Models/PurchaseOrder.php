@@ -4,15 +4,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class PurchaseOrder extends Model
 {
-    protected $fillable = [
-        'vendor_id',
-        'po_number',
-        'project_id',
-        'order_date',
-        'total_amount',
-        'status',
-        //'boq_id',
-    ];
+   protected $fillable = [
+    'vendor_id',
+    'po_number',
+    'project_id',
+    'order_date',
+    'total_amount',
+    'gst_amount',
+    'status',
+    't_c',
+    'notes'
+];
 
   public function items()
 {

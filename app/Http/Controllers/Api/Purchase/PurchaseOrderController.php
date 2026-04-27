@@ -26,62 +26,88 @@ public function index()
 
 
      public function store(Request $request)
-    {
-        $request->validate([
-            'vendor_id'     => 'required|integer',
-            //'boq_id'  => 'required|integer',
-            'po_number'     => 'required|string|unique:purchase_orders',
-            'project_id'    => 'required|integer',
-            'order_date'    => 'required|date',
-            'total_amount'  => 'required|numeric',
-            
-            'status'        => 'required|string',
-            'items'         => 'required|array|min:1',
-            'items.*.item_name'   => 'required|string',
-            'items.*.ordered_qty'    => 'required|numeric',
-            'items.*.is_manual' => 'nullable|boolean',
-            'items.*.boq_id'=> 'nullable|numeric',
-            'items.*.boq_item_id'=> 'nullable|numeric', /// used for boq_item_id 
-            'items.*.unit_price'  => 'required|numeric',
-            'items.*.total'       => 'required|numeric',
-        ]);
+    {$request->validate([
+    'vendor_id'     => 'required|integer',
+    'po_number'     => 'required|string|unique:purchase_orders',
+    'project_id'    => 'required|integer',
+    'order_date'    => 'required|date',
 
-        DB::beginTransaction();
+    'total_amount'  => 'required|numeric',
+    'gst_amount'    => 'nullable|numeric',
+    't_c'           => 'nullable|string',
+    'notes'         => 'nullable|string',
 
-        try {
-            // 1️⃣ Create PO Header
-            $po = PurchaseOrder::create(
-                $request->except('items')
-            );
+    'status'        => 'required|string',
 
-            // 2️⃣ Create PO Items
-           foreach ($request->items as $item) {
-    PurchaseOrderItem::create([
-        'purchase_order_id' => $po->id,
-        'boq_item_id'       => $item['boq_item_id'] ?? null,
-        'item_name'         => $item['item_name'],
-        'ordered_qty'       => $item['ordered_qty'],
-        'unit_price'        => $item['unit_price'],
-        'total'             => $item['total'],
-        'is_manual'         => $item['is_manual'] ?? 0, // ✅ key line
-    ]);
-}
-            DB::commit();
+    'items'                     => 'required|array|min:1',
+    'items.*.item_name'         => 'required|string',
+    'items.*.ordered_qty'       => 'required|numeric',
+    'items.*.unit_price'        => 'required|numeric',
+    'items.*.total'             => 'required|numeric',
+    'items.*.is_manual'         => 'nullable|boolean',
+    'items.*.boq_item_id'       => 'nullable|numeric',
+]);
 
-            return response()->json([
-                'message' => 'Purchase Order created successfully',
-                'data'    => $po->load('items')
-            ], 201);
+DB::beginTransaction();
 
-        } catch (\Exception $e) {
-            DB::rollBack();
+try {
+    // ✅ Calculate base total from items (SAFE)
+    $calculatedBaseTotal = 0;
 
-            return response()->json([
-                'message' => 'Error creating Purchase Order',
-                'error'   => $e->getMessage()
-            ], 500);
-        }
+    foreach ($request->items as $item) {
+        $calculatedBaseTotal += ($item['ordered_qty'] * $item['unit_price']);
     }
+
+    // ✅ GST calculation (if not passed)
+    $gstAmount = $request->gst_amount ?? ($calculatedBaseTotal * 0.18);
+
+    // ✅ Final total (base + GST)
+    $finalTotal = $calculatedBaseTotal + $gstAmount;
+
+    // 1️⃣ Create PO Header
+    $po = PurchaseOrder::create([
+        'vendor_id'     => $request->vendor_id,
+        'po_number'     => $request->po_number,
+        'project_id'    => $request->project_id,
+        'order_date'    => $request->order_date,
+        'total_amount'  => $finalTotal,   // ✅ storing final amount
+        'gst_amount'    => $gstAmount,
+        'status'        => $request->status,
+        't_c'           => $request->t_c,
+        'notes'         => $request->notes,
+    ]);
+
+    // 2️⃣ Create PO Items
+    foreach ($request->items as $item) {
+
+        $base = $item['ordered_qty'] * $item['unit_price'];
+
+        PurchaseOrderItem::create([
+            'purchase_order_id' => $po->id,
+            'boq_item_id'       => $item['boq_item_id'] ?? null,
+            'item_name'         => $item['item_name'],
+            'ordered_qty'       => $item['ordered_qty'],
+            'unit_price'        => $item['unit_price'],
+            'total'             => $base, // ✅ store base (without GST)
+            'is_manual'         => $item['is_manual'] ?? 0,
+        ]);
+    }
+
+    DB::commit();
+
+    return response()->json([
+        'message' => 'Purchase Order created successfully',
+        'data'    => $po->load('items')
+    ], 201);
+
+} catch (\Exception $e) {
+    DB::rollBack();
+
+    return response()->json([
+        'message' => 'Error creating Purchase Order',
+        'error'   => $e->getMessage()
+    ], 500);
+}}
 /*** enatbel log store after remaining issue resolve 24-feb kamlesh 5:21PM */
 
 /*
