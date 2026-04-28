@@ -37,9 +37,12 @@ class DcOutController extends Controller
         'issue_date' => 'required|date',
         'issued_to' => 'required|string',
         'items' => 'required|array',
-        'items.*.boq_item_id' => 'nullable|exists:boq_items,id',
-        'items.*.item_name' => 'required_without:items.*.boq_item_id',
+       // 'items.*.boq_item_id' => 'nullable|exists:boq_items,id',
+      //  'items.*.item_name' => 'required_without:items.*.boq_item_id',
         'items.*.issued_qty' => 'required|numeric|min:0.01',
+
+        'items.*.boq_item_id' => 'required|exists:boq_items,id',
+'items.*.item_name' => 'nullable',
     ]);
 
     DB::beginTransaction();
@@ -71,9 +74,11 @@ class DcOutController extends Controller
             $itemName = $item['item_name'] ?? null;
 
             // ✅ Final Item Name
-            $itemNameFinal = $boqId
-                ? optional($boqItems[$boqId] ?? null)->item_name
-                : $itemName;
+            if (!isset($boqItems[$boqId])) {
+    throw new \Exception("Invalid BOQ Item ID: " . $boqId);
+}
+
+$itemNameFinal = $boqItems[$boqId]->item_name;
 
             // =========================
             // ✅ SAVE DC OUT ITEM
@@ -88,17 +93,21 @@ class DcOutController extends Controller
             // =========================
             // ✅ STOCK FETCH WITH LOCK
             // =========================
-            $stock = $boqId
-                ? Stock::where('boq_item_id', $boqId)->lockForUpdate()->first()
-                : Stock::where('item_name', $itemNameFinal)
-                    ->whereNull('boq_item_id')
-                    ->lockForUpdate()
-                    ->first();
+ 
+if (!$boqId) {
+    throw new \Exception("BOQ Item ID missing for item: " . ($item['item_name'] ?? 'Unknown'));
+}
 
-            if (!$stock || $stock->available_qty < $item['issued_qty']) {
-                throw new \Exception("Insufficient stock for item: " . $itemNameFinal);
-            }
+$stock = Stock::where('boq_item_id', $boqId)
+    ->lockForUpdate()
+    ->first();
 
+if (!$stock) {
+    throw new \Exception("Stock not found for BOQ Item ID: " . $boqId);
+}
+
+if ($stock->available_qty < $item['issued_qty']) {
+    throw new \Exception("Insufficient stock for item: " . $itemNameFinal);
             // =========================
             // ✅ STOCK OUT
             // =========================
@@ -129,7 +138,8 @@ class DcOutController extends Controller
             ]
         ]);
 
-    } catch (\Exception $e) {
+    } 
+    }catch (\Exception $e) {
 
         DB::rollBack();
 
