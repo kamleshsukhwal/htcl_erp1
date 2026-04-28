@@ -9,6 +9,7 @@ class PurchaseOrder extends Model
         'vendor_id',
         'po_number',
         'project_id',
+        'cliennt_id',
         'order_date',
 
         // ✅ NEW FIELDS

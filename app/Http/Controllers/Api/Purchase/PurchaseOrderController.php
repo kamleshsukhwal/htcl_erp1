@@ -20,7 +20,6 @@ public function index()
 
     return response()->json([
         'status' => true,
-          'client_id' => 1, 
         'data' => $data
     ]);
 }
@@ -32,7 +31,7 @@ public function index()
     'po_number'     => 'required|string|unique:purchase_orders',
     'project_id'    => 'required|integer',
     'order_date'    => 'required|date',
-
+    'client_id'     => 'nullable|integer',
     'delivery_date' => 'nullable|date',
     'approved_by'   => 'nullable|integer',
     'approved_status' => 'nullable|string|in:pending,approved,rejected',
