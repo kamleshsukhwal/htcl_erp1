@@ -113,17 +113,43 @@ foreach ($approvers as $approver) {
     ]);
 
     $this->sendMail(
-        $approver->email,
-        'PO Approval Required',
-        "Hello {$approver->name},<br><br>
-        New PO created.<br><br>
+    $approver->email,
+    'PO Approval Required',
+    "
+    <div style='font-family: Arial, sans-serif; background:#f4f6f9; padding:20px;'>
+        <div style='max-width:600px; margin:auto; background:#ffffff; border-radius:8px; padding:20px;'>
 
-        PO Number: {$po->po_number}<br><br>
+            <h2 style='color:#2c3e50; margin-bottom:10px;'>Purchase Order Approval</h2>
 
-        <a href='{$approveUrl}'>Approve PO</a><br><br>
+            <p>Hello <b>{$approver->name}</b>,</p>
 
-        Thanks"
-    );
+            <p>A new Purchase Order has been created and requires your approval.</p>
+
+            <div style='background:#f8f9fa; padding:15px; border-radius:6px; margin:15px 0;'>
+                <p style='margin:5px 0;'><b>PO Number:</b> {$po->po_number}</p>
+                <p style='margin:5px 0;'><b>Project ID:</b> {$po->project_id}</p>
+            </div>
+
+            <div style='text-align:center; margin:20px 0;'>
+                <a href='https://erp.htcl.co.in/api/po/approve/{$po->id}?user_id={$approver->id}' 
+                   style='background:#28a745; color:#fff; padding:12px 20px; text-decoration:none; border-radius:5px; font-weight:bold;'>
+                   Approve PO
+                </a>
+            </div>
+
+            <p>If you did not expect this request, please ignore this email.</p>
+
+            <hr style='border:none; border-top:1px solid #eee; margin:20px 0;'>
+
+            <p style='font-size:12px; color:#888;'>
+                This is an automated message from ERP System.<br>
+                <a href='https://erp.htcl.co.in' style='color:#007bff;'>erp.htcl.co.in</a>
+            </p>
+
+        </div>
+    </div>
+    "
+);
 }
     // 2️⃣ Create PO Items
     foreach ($request->items as $item) {
