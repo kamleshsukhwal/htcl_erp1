@@ -6,13 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Boq;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
-
+use App\Models\User;
+use App\Traits\SendEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
+
 
    class PurchaseOrderController extends Controller
 {
-   
+   use SendEmail;
 public function index()
 {
     $data = PurchaseOrder::withCount('items')
@@ -90,6 +93,40 @@ try {
         'notes'         => $request->notes,
     ]);
 
+
+
+// after PO created
+$po = PurchaseOrder::create([
+    // your fields
+    'approved_status' => 'pending'
+]);
+
+// ✅ get approvers
+$approvers = User::role(['admin', 'manager'])->get();
+
+
+$approvers = User::whereIn('id', [81,92,93])->get();
+// ✅ loop and send mail
+foreach ($approvers as $approver) {
+
+    $approveUrl = URL::signedRoute('po.approve', [
+        'id' => $po->id,
+        'user_id' => $approver->id
+    ]);
+
+    $this->sendMail(
+        $approver->email,
+        'PO Approval Required',
+        "Hello {$approver->name},<br><br>
+        New PO created.<br><br>
+
+        PO Number: {$po->po_number}<br><br>
+
+        <a href='{$approveUrl}'>Approve PO</a><br><br>
+
+        Thanks"
+    );
+}
     // 2️⃣ Create PO Items
     foreach ($request->items as $item) {
 
