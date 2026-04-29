@@ -114,7 +114,7 @@ foreach ($approvers as $approver) {
 
     $this->sendMail(
     $approver->email,
-    'PO Approval Required',
+    "PO Approval Required- {$po->po_number}",
     "
     <div style='font-family: Arial, sans-serif; background:#f4f6f9; padding:20px;'>
         <div style='max-width:600px; margin:auto; background:#ffffff; border-radius:8px; padding:20px;'>
