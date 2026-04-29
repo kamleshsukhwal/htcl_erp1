@@ -22,6 +22,8 @@ use App\Http\Controllers\Api\Finance\InvoiceController;
 use App\Http\Controllers\Api\Finance\PaymentController;
 use App\Http\Controllers\Api\Finance\VendorPaymentController;
 
+
+ 
 /*
 |--------------------------------------------------------------------------
 | PROJECT MODULE ROUTES
@@ -114,7 +116,12 @@ Route::post('/vendor-payments', [VendorPaymentController::class, 'store']);
 Route::post('/vendor-payments/{id}/upload', [VendorPaymentController::class, 'uploadAttachment']);
 Route::get('/vendor-payments/download/{id}', [VendorPaymentController::class, 'download']);
 Route::get('/vendor-payments/history/{poId}', [VendorPaymentController::class, 'history']);
-    });
+   
+Route::get('/approve/{id}', [PurchaseOrderController::class, 'approve'])
+    ->name('po.approve')
+    ->middleware('signed');
+
+});
 
 
 
