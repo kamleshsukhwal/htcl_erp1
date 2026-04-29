@@ -213,7 +213,7 @@ if ($totalReceived == 0) {
 
             return [
                // 'dcin_item_id' => $item->id,
-             //   'boq_item_id' => $item->boq_item_id,
+               'boq_item_id' => $item->boq_item_id,
                 'item_name' => $stock->item_name ?? $item->item_name ?? 'N/A', // ✅ FIXED
                 'dcin_qty' => $item->supplied_qty,
                 'available_qty' => $stock->available_qty ?? 0
