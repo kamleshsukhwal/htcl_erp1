@@ -147,7 +147,7 @@ Route::get('/{id}/items-stock', [DcInController::class, 'getDcinItemsWithStock']
         Route::get('/{id}', [DcOutController::class, 'show']);
         Route::get('/items/{id}', [DcOutController::class, 'items']);
     });
-
+ 
 
 /*
  ----------------------------------------------------------------------------
