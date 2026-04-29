@@ -29,7 +29,9 @@ public function index()
 
 
      public function store(Request $request)
-    { $request->validate([
+    { 
+        
+    $request->validate([
     'vendor_id'     => 'required|integer',
     'po_number'     => 'required|string|unique:purchase_orders',
     'project_id'    => 'required|integer',
@@ -95,11 +97,7 @@ try {
 
 
 
-// after PO created
-$po = PurchaseOrder::create([
-    // your fields
-    'approved_status' => 'pending'
-]);
+ 
 
 // ✅ get approvers
 //$approvers = User::role(['admin', 'manager'])->get();
