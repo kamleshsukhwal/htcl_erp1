@@ -102,7 +102,7 @@ $po = PurchaseOrder::create([
 ]);
 
 // ✅ get approvers
-$approvers = User::role(['admin', 'manager'])->get();
+/$approvers = User::role(['admin', 'manager'])->get();
 
 
 $approvers = User::whereIn('id', [81,92,93])->get();
