@@ -70,8 +70,8 @@ public function index()
             $calculatedBaseTotal += ($item['ordered_qty'] * $item['unit_price']);
         }
 
-        $gstAmount = $request->gst_amount ?? ($calculatedBaseTotal * 0.18);
-        $finalTotal = $calculatedBaseTotal + $gstAmount;
+       $gstAmount = $request->gst_amount ?? ($calculatedBaseTotal * 0.18);
+        $finalTotal = $calculatedBaseTotal;
 
         // ✅ Create PO
         $po = PurchaseOrder::create([
@@ -95,25 +95,39 @@ public function index()
         // =========================
         // ✅ Insert Items + BOQ logic
         // =========================
-
+ 
         foreach ($request->items as $item) {
 
             $boqItemId = null;
 
-            // ✅ If save_to_master → insert into BOQ
-            if (!empty($item['save_to_master']) && empty($item['boq_item_id'])) {
+         // Normalize name (avoid duplicates)
+$itemName = trim(strtolower($item['item_name']));
 
-                $boq = BoqItem::create([
-                    'item_name'  => $item['item_name'],
-                    'project_id' => $request->project_id
-                ]);
+// 🔍 Check if BOQ item already exists (same project)
+$existingBoq = BoqItem::whereRaw('LOWER(TRIM(item_name)) = ?', [$itemName])
+    ->where('project_id', $request->project_id)
+    ->first();
 
-                $boqItemId = $boq->id;
+if ($existingBoq) {
 
-            } else {
-                // existing BOQ item
-                $boqItemId = $item['boq_item_id'] ?? null;
-            }
+    // ✅ Use existing BOQ item
+    $boqItemId = $existingBoq->id;
+
+} else {
+
+    // ✅ Insert new BOQ item automatically
+   $boq = BoqItem::create([
+    'boq_id'       => 1,
+    'item_name'    => $item['item_name'],
+    'description'  => $item['item_name'],
+    'unit'         => 'Nos',
+    'quantity'     => $item['ordered_qty'],
+    'rate'         => $item['unit_rate'],
+    'total_amount' => $item['total_amount'],
+]);
+
+    $boqItemId = $boq->id;
+}
 
             $base = $item['ordered_qty'] * $item['unit_price'];
 
