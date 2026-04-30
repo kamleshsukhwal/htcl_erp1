@@ -122,7 +122,7 @@ if ($existingBoq) {
     'description'  => $item['item_name'],
     'unit'         => 'Nos',
     'quantity'     => $item['ordered_qty'],
-    'rate'         => $item['unit_rate'],
+    'rate'         => $item['unit_price'],
     'total_amount' => $item['total_amount'],
 ]);
 
