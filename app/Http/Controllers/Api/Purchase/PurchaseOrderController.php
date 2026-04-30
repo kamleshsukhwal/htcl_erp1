@@ -105,7 +105,7 @@ $itemName = trim(strtolower($item['item_name']));
 
 // 🔍 Check if BOQ item already exists (same project)
 $existingBoq = BoqItem::whereRaw('LOWER(TRIM(item_name)) = ?', [$itemName])
-    ->where('project_id', $request->project_id)
+    ->where('boq_id', $request->boq_id)
     ->first();
 
 if ($existingBoq) {
