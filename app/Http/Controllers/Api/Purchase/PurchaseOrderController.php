@@ -123,7 +123,7 @@ if ($existingBoq) {
     'unit'         => 'Nos',
     'quantity'     => $item['ordered_qty'],
     'rate'         => $item['unit_price'],
-    'total_amount' => $item['total_amount'],
+    'total_amount' => $request->total_amount,
 ]);
 
     $boqItemId = $boq->id;
