@@ -107,10 +107,29 @@ $approvers = User::whereIn('id', [81,92,93])->get();
 // ✅ loop and send mail
 foreach ($approvers as $approver) {
 
-    $approveUrl = URL::signedRoute('po.approve', [
+    $approveUrl = URL::temporarySignedRoute(
+    'po.approve',
+    now()->addMinutes(10), // expiry
+    [
         'id' => $po->id,
         'user_id' => $approver->id
-    ]);
+    ]
+);
+
+
+$this->sendMail(
+    $approver->email,
+    "PO Approval Required- {$po->po_number}",
+    "
+    <div style='text-align:center; margin:20px;'>
+        <a href='{$approveUrl}' 
+           style='background:#28a745; color:#fff; padding:12px 20px; text-decoration:none; border-radius:5px;'>
+           Approve PO
+        </a>
+    </div>
+    "
+);
+
 
     $this->sendMail(
     $approver->email,
@@ -131,7 +150,7 @@ foreach ($approvers as $approver) {
             </div>
 
             <div style='text-align:center; margin:20px 0;'>
-                <a href='https://erp.htcl.co.in/api/purchase-orders/approve/{$po->id}?user_id={$approver->id}' 
+                <a href='{$approveUrl}'
                    style='background:#28a745; color:#fff; padding:12px 20px; text-decoration:none; border-radius:5px; font-weight:bold;'>
                    Approve PO
                 </a>
@@ -252,7 +271,8 @@ public function approvebyadmin($id)
     }
 }
 
-public function approve(Request $request, $id)
+
+ public function approve(Request $request, $id)
 {
     $po = PurchaseOrder::findOrFail($id);
 
@@ -266,12 +286,6 @@ public function approve(Request $request, $id)
         'approved_at' => now()
     ]);
 
-    return response("
-        <div style='font-family:Arial; text-align:center; margin-top:50px;'>
-            <h2 style='color:green;'>✅ PO Approved Successfully</h2>
-            <p>You can close this window.</p>
-        </div>
-    ");
+    return response("<h2>✅ PO Approved Successfully</h2>");
 }
-
 }
