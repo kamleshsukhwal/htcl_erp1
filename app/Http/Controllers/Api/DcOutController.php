@@ -70,75 +70,52 @@ class DcOutController extends Controller
 
         foreach ($items as $item) {
 
-            $boqId = $item['boq_item_id'] ?? null;
-            $itemName = $item['item_name'] ?? null;
+    $boqId = $item['boq_item_id'];
 
-            // ✅ Final Item Name
-            if (!isset($boqItems[$boqId])) {
-    throw new \Exception("Invalid BOQ Item ID: " . $boqId);
-}
+    if (!isset($boqItems[$boqId])) {
+        throw new \Exception("Invalid BOQ Item ID: " . $boqId);
+    }
 
-$itemNameFinal = $boqItems[$boqId]->item_name;
+    $itemNameFinal = $boqItems[$boqId]->item_name;
 
-            // =========================
-            // ✅ SAVE DC OUT ITEM
-            // =========================
-            DcOutItem::create([
-                'dc_out_id' => $dcOut->id,
-                'boq_item_id' => $boqId,
-                'item_name' => $itemNameFinal,
-                'issued_qty' => $item['issued_qty']
-            ]);
+    // ✅ Save DC OUT item
+    DcOutItem::create([
+        'dc_out_id' => $dcOut->id,
+        'boq_item_id' => $boqId,
+        'item_name' => $itemNameFinal,
+        'issued_qty' => $item['issued_qty']
+    ]);
 
-            // =========================
-            // ✅ STOCK FETCH WITH LOCK
-            // =========================
- 
-if (!$boqId) {
-    throw new \Exception("BOQ Item ID missing for item: " . ($item['item_name'] ?? 'Unknown'));
-}
+    // ✅ Stock fetch
+    $stock = Stock::where('boq_item_id', $boqId)
+        ->lockForUpdate()
+        ->first();
 
-$stock = Stock::where('boq_item_id', $boqId)
-    ->lockForUpdate()
-    ->first();
+    if (!$stock) {
+        throw new \Exception("Stock not found for BOQ Item ID: " . $boqId);
+    }
 
-if (!$stock) {
-    throw new \Exception("Stock not found for BOQ Item ID: " . $boqId);
-}
+    if ($stock->available_qty < $item['issued_qty']) {
+        throw new \Exception("Insufficient stock for item: " . $itemNameFinal);
+    }
 
-if ($stock->available_qty < $item['issued_qty']) {
-    throw new \Exception("Insufficient stock for item: " . $itemNameFinal);
-            // =========================
-            // ✅ STOCK OUT
-            // =========================
-            $stock->decrement('available_qty', $item['issued_qty']);
+    // ✅ Stock out
+    $stock->decrement('available_qty', $item['issued_qty']);
 
-            // =========================
-            // ✅ STOCK TRANSACTION
-            // =========================
-            StockTransaction::create([
-                'boq_item_id' => $boqId,
-                'item_name' => $itemNameFinal,
-                'type' => 'OUT',
-                'quantity' => $item['issued_qty'],
-                'reference_type' => 'DC_OUT',
-                'reference_id' => $dcOut->id,
-                'created_by' => auth()->id() ?? null
-            ]);
-        }
+    // ✅ Stock transaction
+    StockTransaction::create([
+        'boq_item_id' => $boqId,
+        'item_name' => $itemNameFinal,
+        'type' => 'OUT',
+        'quantity' => $item['issued_qty'],
+        'reference_type' => 'DC_OUT',
+        'reference_id' => $dcOut->id,
+        'created_by' => auth()->id() ?? null
+    ]);
 
-        DB::commit();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'DC OUT Created Successfully',
-            'data' => [
-                'dc_out_id' => $dcOut->id,
-                'dc_number' => $dcOut->dc_number
-            ]
-        ]);
-
-    } 
+// ✅ COMMIT AFTER LOOP
+DB::commit();
+} 
     }catch (\Exception $e) {
 
         DB::rollBack();
