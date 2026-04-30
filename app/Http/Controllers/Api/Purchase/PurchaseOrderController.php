@@ -127,11 +127,11 @@ foreach ($approvers as $approver) {
 
             <div style='background:#f8f9fa; padding:15px; border-radius:6px; margin:15px 0;'>
                 <p style='margin:5px 0;'><b>PO Number:</b> {$po->po_number}</p>
-                <p style='margin:5px 0;'><b>Project ID:</b> {$po->project_id}</p>
+                <p style='margin:5px 0;'><b>Amount:</b> {$finalTotal}</p>
             </div>
 
             <div style='text-align:center; margin:20px 0;'>
-                <a href='https://erp.htcl.co.in/api/po/approve/{$po->id}?user_id={$approver->id}' 
+                <a href='https://erp.htcl.co.in/api/purchase-orders/approve/{$po->id}?user_id={$approver->id}' 
                    style='background:#28a745; color:#fff; padding:12px 20px; text-decoration:none; border-radius:5px; font-weight:bold;'>
                    Approve PO
                 </a>
@@ -142,7 +142,7 @@ foreach ($approvers as $approver) {
             <hr style='border:none; border-top:1px solid #eee; margin:20px 0;'>
 
             <p style='font-size:12px; color:#888;'>
-                This is an automated message from ERP System.<br>
+                This is an automated message from HTCL ERP System.<br>
                 <a href='https://erp.htcl.co.in' style='color:#007bff;'>erp.htcl.co.in</a>
             </p>
 
@@ -250,6 +250,28 @@ public function approvebyadmin($id)
             'error'   => $e->getMessage()
         ], 500);
     }
+}
+
+public function approve(Request $request, $id)
+{
+    $po = PurchaseOrder::findOrFail($id);
+
+    if ($po->approved_status === 'approved') {
+        return response("<h3>PO already approved</h3>");
+    }
+
+    $po->update([
+        'approved_status' => 'approved',
+        'approved_by' => $request->user_id,
+        'approved_at' => now()
+    ]);
+
+    return response("
+        <div style='font-family:Arial; text-align:center; margin-top:50px;'>
+            <h2 style='color:green;'>✅ PO Approved Successfully</h2>
+            <p>You can close this window.</p>
+        </div>
+    ");
 }
 
 }
