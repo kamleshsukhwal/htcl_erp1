@@ -119,39 +119,53 @@ foreach ($approvers as $approver) {
 
  
 
-
-    $this->sendMail(
+$this->sendMail(
     $approver->email,
-    "PO Approval Required- {$po->po_number}",
+    "PO Approval Required - {$po->po_number}",
     "
     <div style='font-family: Arial, sans-serif; background:#f4f6f9; padding:20px;'>
-        <div style='max-width:600px; margin:auto; background:#ffffff; border-radius:8px; padding:20px;'>
+        <div style='max-width:600px; margin:auto; background:#ffffff; border-radius:8px; padding:25px;'>
 
-            <h2 style='color:#2c3e50; margin-bottom:10px;'>Purchase Order Approval</h2>
+            <!-- Logo -->
+            <div style='text-align:center; margin-bottom:20px;'>
+                <img src='https://erp.htcl.co.in/logo_htcl.png' alt='HTCL Logo' style='max-height:60px;'>
+            </div>
 
+            <!-- Title -->
+            <h2 style='color:#2c3e50; text-align:center;'>Purchase Order Approval</h2>
+
+            <!-- Greeting -->
             <p>Hello <b>{$approver->name}</b>,</p>
 
-            <p>A new Purchase Order has been created and requires your approval.</p>
+            <!-- Message -->
+            <p>
+                A new Purchase Order has been created and requires your approval.
+            </p>
 
+            <!-- PO Details -->
             <div style='background:#f8f9fa; padding:15px; border-radius:6px; margin:15px 0;'>
                 <p style='margin:5px 0;'><b>PO Number:</b> {$po->po_number}</p>
                 <p style='margin:5px 0;'><b>Amount:</b> {$finalTotal}</p>
             </div>
 
-            <div style='text-align:center; margin:20px 0;'>
-                <a href='{$approveUrl}'
-                   style='background:#28a745; color:#fff; padding:12px 20px; text-decoration:none; border-radius:5px; font-weight:bold;'>
-                   Approve PO
+            <!-- Instruction -->
+            <p style='font-weight:bold; color:#d9534f;'>
+                Kindly login to HTCL ERP and approve the Purchase Order.
+            </p>
+
+            <!-- ERP Link -->
+            <p>
+                ERP URL: 
+                <a href='https://erp.htcl.co.in' style='color:#007bff; text-decoration:none;'>
+                    https://erp.htcl.co.in
                 </a>
-            </div>
+            </p>
 
-            <p>If you did not expect this request, please ignore this email.</p>
-
+            <!-- Footer -->
             <hr style='border:none; border-top:1px solid #eee; margin:20px 0;'>
 
-            <p style='font-size:12px; color:#888;'>
-                This is an automated message from HTCL ERP System.<br>
-                <a href='https://erp.htcl.co.in' style='color:#007bff;'>erp.htcl.co.in</a>
+            <p style='font-size:12px; color:#888; text-align:center;'>
+                This is an automated message from HTCL ERP System.
             </p>
 
         </div>
@@ -261,6 +275,8 @@ public function approvebyadmin($id)
 }
 
 
+/* create for email PO arroval but not working
+
  public function approve(Request $request, $id)
 {
     $po = PurchaseOrder::findOrFail($id);
@@ -276,5 +292,5 @@ public function approvebyadmin($id)
     ]);
 
     return response("<h2>✅ PO Approved Successfully</h2>");
-}
+}*/
 }

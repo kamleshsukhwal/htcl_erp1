@@ -117,9 +117,7 @@ Route::post('/vendor-payments/{id}/upload', [VendorPaymentController::class, 'up
 Route::get('/vendor-payments/download/{id}', [VendorPaymentController::class, 'download']);
 Route::get('/vendor-payments/history/{poId}', [VendorPaymentController::class, 'history']);
    
-Route::get('/approve/{id}', [PurchaseOrderController::class, 'approve'])
-    ->name('po.approve')
-    ->middleware('signed');
+ 
 
 });
 
