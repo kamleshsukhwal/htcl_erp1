@@ -96,53 +96,59 @@ public function index()
         // ✅ Insert Items + BOQ logic
         // =========================
  
-        foreach ($request->items as $item) {
+     foreach ($request->items as $item) {
 
-            $boqItemId = null;
+    $boqItemId = null;
 
-         // Normalize name (avoid duplicates)
-$itemName = trim(strtolower($item['item_name']));
+    // ✅ Case 1: Already BOQ item (NOT manual)
+    if (empty($item['is_manual']) || $item['is_manual'] == 0) {
 
-// 🔍 Check if BOQ item already exists (same project)
-$existingBoq = BoqItem::whereRaw('LOWER(TRIM(item_name)) = ?', [$itemName])
-    ->where('boq_id', $request->boq_id)
-    ->first();
+        $boqItemId = $item['boq_item_id'] ?? null;
 
-if ($existingBoq) {
+    } else {
 
-    // ✅ Use existing BOQ item
-    $boqItemId = $existingBoq->id;
+        // ✅ Case 2: Manual item → check & insert
 
-} else {
+        $itemName = trim(strtolower($item['item_name']));
 
-    // ✅ Insert new BOQ item automatically
-   $boq = BoqItem::create([
-    'boq_id'       => 1,
-    'item_name'    => $item['item_name'],
-    'description'  => $item['item_name'],
-    'unit'         => 'Nos',
-    'quantity'     => $item['ordered_qty'],
-    'rate'         => $item['unit_price'],
-    'total_amount' => $request->total_amount,
-]);
+        $existingBoq = BoqItem::whereRaw('LOWER(TRIM(item_name)) = ?', [$itemName])
+            ->where('boq_id', 1) // ⚠️ replace dynamic later
+            ->first();
 
-    $boqItemId = $boq->id;
-}
+        if ($existingBoq) {
 
-            $base = $item['ordered_qty'] * $item['unit_price'];
+            $boqItemId = $existingBoq->id;
 
-            PurchaseOrderItem::create([
-                'purchase_order_id' => $po->id,
-                'boq_item_id'       => $boqItemId,
-                'item_name'         => $item['item_name'],
-                'ordered_qty'       => $item['ordered_qty'],
-                'unit_price'        => $item['unit_price'],
-                'total'             => $base,
-                'is_manual'         => $item['is_manual'] ?? 0,
-                'is_billable'       => $item['is_billable'] ?? 1,
+        } else {
+
+            $boq = BoqItem::create([
+                'boq_id'       => 1,
+                'item_name'    => $item['item_name'],
+                'description'  => $item['item_name'],
+                'unit'         => 'Nos',
+                'quantity'     => $item['ordered_qty'],
+                'rate'         => $item['unit_price'],
+                'total_amount' => $item['ordered_qty'] * $item['unit_price'],
             ]);
-        }
 
+            $boqItemId = $boq->id;
+        }
+    }
+
+    // ✅ Insert PO item
+    $base = $item['ordered_qty'] * $item['unit_price'];
+
+    PurchaseOrderItem::create([
+        'purchase_order_id' => $po->id,
+        'boq_item_id'       => $boqItemId,
+        'item_name'         => $item['item_name'],
+        'ordered_qty'       => $item['ordered_qty'],
+        'unit_price'        => $item['unit_price'],
+        'total'             => $base,
+        'is_manual'         => $item['is_manual'] ?? 0,
+        'is_billable'       => $item['is_billable'] ?? 1,
+    ]);
+}
         DB::commit();
 
         // =========================
