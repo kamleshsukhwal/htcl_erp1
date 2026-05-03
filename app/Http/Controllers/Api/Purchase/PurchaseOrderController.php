@@ -40,14 +40,13 @@ public function index()
         'order_date'    => 'required|date',
         'client_id'     => 'nullable|integer',
         'delivery_date' => 'nullable|date',
-
         'delivery_address' => 'nullable|string',
         'total_amount'  => 'required|numeric',
         'gst_amount'    => 'nullable|numeric',
         't_c'           => 'nullable|string',
         'notes'         => 'nullable|string',
         'deliver_to'    => 'nullable|string',
-        'status'        => 'required|string',
+        'status'        => 'required|in:draft,pending_approval,approved,rejected,partially_received,fully_received,closed,cancelled',
 
         'items'                     => 'required|array|min:1',
         'items.*.item_name'         => 'required|string',
@@ -87,7 +86,7 @@ public function index()
             'total_amount'  => $finalTotal,
             'gst_amount'    => $gstAmount,
             'deliver_to'    => $request->deliver_to,
-            'status'        => $request->status,
+            'status'        => 'draft',
             't_c'           => $request->t_c,
             'notes'         => $request->notes,
         ]);
@@ -109,10 +108,10 @@ public function index()
 
         // ✅ Case 2: Manual item → check & insert
 
-        $itemName = trim(strtolower($item['item_name']));
+        $itemName = strtolower(trim(preg_replace('/\s+/', ' ', $item['item_name'])));
 
         $existingBoq = BoqItem::whereRaw('LOWER(TRIM(item_name)) = ?', [$itemName])
-            ->where('boq_id', 1) // ⚠️ replace dynamic later
+            ->where('boq_id', 1) 
             ->first();
 
         if ($existingBoq) {
@@ -245,8 +244,8 @@ AuditLog::create([
         'message' => 'Purchase Order details',
         'data' => $po
     ], 200);
-}
-
+ }
+/*
 public function approvebyadmin($id)
 {
      DB::beginTransaction();
@@ -282,7 +281,7 @@ public function approvebyadmin($id)
             'error'   => $e->getMessage()
         ], 500);
     }
-}
+} */
 
 
 /* create for email PO arroval but not working
@@ -303,4 +302,132 @@ public function approvebyadmin($id)
 
     return response("<h2>✅ PO Approved Successfully</h2>");
 }*/
+
+
+
+/*** PO summary for boxes */
+
+
+public function poSummary(Request $request)
+{  // Base query
+    $query = DB::table('purchase_orders');
+
+    // Optional filters
+    if ($request->project_id) {
+        $query->where('project_id', $request->project_id);
+    }
+
+    if ($request->from_date && $request->to_date) {
+        $query->whereBetween('order_date', [$request->from_date, $request->to_date]);
+    }
+
+    // ✅ Total PO Amount
+    $total_po = (clone $query)->sum('total_amount');
+
+    // ✅ Approved Amount
+    $approved_po = (clone $query)
+        ->where('approved_status', 'approved')
+        ->sum('total_amount');
+
+    // ✅ Pending Amount
+    $pending_po = (clone $query)
+        ->where('approved_status', 'pending')
+        ->sum('total_amount');
+
+    // ===============================
+    // ✅ Received Amount (CORRECT LOGIC)
+    // ===============================
+
+    $received_amount = DB::table('dc_in_items as dci')
+        ->join('dc_ins as dcih', 'dcih.id', '=', 'dci.dc_in_id')
+        ->join('purchase_orders as po', 'po.id', '=', 'dcih.purchase_order_id')
+        ->leftJoin('purchase_order_items as poi', function ($join) {
+            $join->on('poi.purchase_order_id', '=', 'po.id')
+                 ->on(DB::raw('LOWER(TRIM(poi.item_name))'), '=', DB::raw('LOWER(TRIM(dci.item_name))'));
+        })
+        ->when($request->project_id, function ($q) use ($request) {
+            $q->where('po.project_id', $request->project_id);
+        })
+        ->sum(DB::raw('dci.supplied_qty * COALESCE(poi.unit_price, 0)'));
+
+    return response()->json([
+        'status' => true,
+        'data' => [
+            'total_po_amount' => $total_po,
+            'approved_amount' => $approved_po,
+            'pending_amount'  => $pending_po,
+            'received_amount' => $received_amount,
+        ]
+    ]);
 }
+
+
+
+
+
+/* how much qty receive on po  */
+
+
+public function poWithQty(Request $request)
+{
+    $pos = DB::table('purchase_orders as po')
+        ->leftJoin('purchase_order_items as poi', 'poi.purchase_order_id', '=', 'po.id')
+
+        // Join DC IN header
+        ->leftJoin('dc_ins as dcih', 'dcih.purchase_order_id', '=', 'po.id')
+
+        // Join DC IN items (match by item_name)
+        ->leftJoin('dc_in_items as dci', function ($join) {
+            $join->on('dci.dc_in_id', '=', 'dcih.id')
+                 ->on(DB::raw('LOWER(TRIM(dci.item_name))'), '=', DB::raw('LOWER(TRIM(poi.item_name))'));
+        })
+
+        ->select(
+            'po.id',
+            'po.po_number',
+            'po.total_amount',
+            'po.approved_status',
+
+            DB::raw('COALESCE(SUM(DISTINCT poi.ordered_qty),0) as total_ordered'),
+            DB::raw('COALESCE(SUM(dci.supplied_qty),0) as total_received')
+        )
+
+        ->groupBy('po.id', 'po.po_number', 'po.total_amount', 'po.approved_status')
+        ->get();
+
+    // Calculate pending + %
+    foreach ($pos as $po) {
+
+        $po->pending_qty = $po->total_ordered - $po->total_received;
+
+        $po->progress_percent = $po->total_ordered > 0
+            ? round(($po->total_received / $po->total_ordered) * 100, 2)
+            : 0;
+    }
+
+    return response()->json([
+        'status' => true,
+        'data' => $pos
+    ]);
+}
+
+
+
+
+/****PO  status update  */
+public function submit($id)
+{
+    $po = PurchaseOrder::findOrFail($id);
+
+    if ($po->status !== 'draft') {
+        return response()->json(['message' => 'Only draft can be submitted'], 400);
+    }
+
+    // send email here
+    // no status change yet OR you can mark internally
+
+    return response()->json(['message' => 'Submitted for approval']);
+}
+
+}
+

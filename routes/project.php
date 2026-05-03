@@ -118,7 +118,8 @@ Route::get('/vendor-payments/download/{id}', [VendorPaymentController::class, 'd
 Route::get('/vendor-payments/history/{poId}', [VendorPaymentController::class, 'history']);
    
  
-
+Route::get('/po-summary', [PurchaseOrderController::class, 'poSummary']);
+Route::get('/po-with-qty', [PurchaseOrderController::class, 'poWithQty']);
 });
 
 
