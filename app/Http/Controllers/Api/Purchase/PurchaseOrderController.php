@@ -46,7 +46,7 @@ public function index()
         't_c'           => 'nullable|string',
         'notes'         => 'nullable|string',
         'deliver_to'    => 'nullable|string',
-        'status'        => 'required|in:draft,pending_approval,approved,rejected,partially_received,fully_received,closed,cancelled',
+        'status'        => 'required|in:draft,pending,pending_approval,approved,rejected,partially_received,fully_received,closed,cancelled',
 
         'items'                     => 'required|array|min:1',
         'items.*.item_name'         => 'required|string',
