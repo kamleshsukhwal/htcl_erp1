@@ -154,52 +154,7 @@ public function index()
         // ✅ SEND EMAIL AFTER COMMIT
         // =========================
 
-        $approvers = User::whereIn('id', [81, 92, 93])->get();
-
-        foreach ($approvers as $approver) {
-
-            $this->sendMail(
-                $approver->email,
-                "PO Approval Required - {$po->po_number}",
-                "
-                <div style='font-family: Arial, sans-serif; background:#f4f6f9; padding:20px;'>
-                    <div style='max-width:600px; margin:auto; background:#ffffff; border-radius:8px; padding:25px;'>
-
-                        <div style='text-align:center; margin-bottom:20px;'>
-                            <img src='https://erp.htcl.co.in/logo_htcl.png' style='max-height:60px;'>
-                        </div>
-
-                        <h2 style='color:#2c3e50; text-align:center;'>Purchase Order Approval</h2>
-
-                        <p>Hello <b>{$approver->name}</b>,</p>
-
-                        <p>A new Purchase Order has been created and requires your approval.</p>
-
-                        <div style='background:#f8f9fa; padding:15px; border-radius:6px; margin:15px 0;'>
-                            <p><b>PO Number:</b> {$po->po_number}</p>
-                            <p><b>Amount:</b> {$finalTotal}</p>
-                        </div>
-
-                        <p style='font-weight:bold; color:#d9534f;'>
-                            Kindly login to HTCL ERP and approve the Purchase Order.
-                        </p>
-
-                        <p>
-                            ERP URL:
-                            <a href='https://erp.htcl.co.in'>https://erp.htcl.co.in</a>
-                        </p>
-
-                        <hr>
-
-                        <p style='font-size:12px; color:#888; text-align:center;'>
-                            This is an automated message from HTCL ERP System.
-                        </p>
-
-                    </div>
-                </div>
-                "
-            );
-        }
+       
 
         return response()->json([
             'message' => 'Purchase Order created successfully',
@@ -419,15 +374,70 @@ public function submit($id)
 {
     $po = PurchaseOrder::findOrFail($id);
 
+    // ✅ Only draft can be submitted
     if ($po->status !== 'draft') {
-        return response()->json(['message' => 'Only draft can be submitted'], 400);
+        return response()->json(['message' => 'Only draft PO can be submitted'], 400);
     }
 
-    // send email here
-    // no status change yet OR you can mark internally
+    // ✅ Update status to pending approval
+    $po->update([
+        'status' => 'pending_approval'
+    ]);
 
-    return response()->json(['message' => 'Submitted for approval']);
+    // ✅ Send email to accounts team
+    $approvers = User::whereIn('id', [81, 92, 93])->get();
+
+    foreach ($approvers as $approver) {
+
+        $this->sendMail(
+            $approver->email,
+            "PO Approval Required - {$po->po_number}",
+            "
+            <div style='font-family: Arial; background:#f4f6f9; padding:20px;'>
+                <div style='max-width:600px; margin:auto; background:#fff; padding:20px;'>
+
+                    <h2>Purchase Order Approval Required</h2>
+
+                    <p>Hello <b>{$approver->name}</b>,</p>
+
+                    <p>A Purchase Order has been submitted for approval.</p>
+
+                    <p><b>PO Number:</b> {$po->po_number}</p>
+                    <p><b>Amount:</b> {$po->total_amount}</p>
+
+                    <p>Please login and approve.</p>
+
+                    <a href='https://erp.htcl.co.in'>Open ERP</a>
+
+                </div>
+            </div>
+            "
+        );
+    }
+
+    return response()->json([
+        'message' => 'PO submitted for approval & email sent'
+    ]);
 }
 
+public function approve($id)
+{
+    $po = PurchaseOrder::findOrFail($id);
+
+    // ✅ Only pending approval can be approved
+    if ($po->status !== 'pending_approval') {
+        return response()->json(['message' => 'PO is not pending approval'], 400);
+    }
+
+    $po->update([
+        'status' => 'approved',
+        'approved_by' => auth()->id(),
+        'approved_status' => 'approved'
+    ]);
+
+    return response()->json([
+        'message' => 'PO Approved successfully'
+    ]);
+}
 }
 
