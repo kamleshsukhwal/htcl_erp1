@@ -59,7 +59,7 @@ public function index()
     ]);
 
     DB::beginTransaction();
-
+//
     try {
 
         // ✅ Calculate total
