@@ -37,7 +37,7 @@ class ClientController extends Controller
         ]);
 
         $client = Client::create([
-    'client_code'     => $request->client_code,
+    'client_code'     => $request->client_code ?? 'CL' . time(),
     'name'            => $request->name,
     'email'           => $request->email,
     'phone'           => $request->phone,
