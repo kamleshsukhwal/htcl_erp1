@@ -46,7 +46,7 @@ public function index()
         't_c'           => 'nullable|string',
         'notes'         => 'nullable|string',
         'deliver_to'    => 'nullable|string',
-        'status'        => 'required|in:draft,pending,pending_approval,approved,rejected,partially_received,fully_received,closed,cancelled',
+        'status'        => 'required|in:draft,pending,approved,rejected,partially_received,fully_received,closed,cancelled',
 
         'items'                     => 'required|array|min:1',
         'items.*.item_name'         => 'required|string',
@@ -381,7 +381,7 @@ public function submit($id)
 
     // ✅ Update status to pending approval
     $po->update([
-        'status' => 'pending_approval'
+        'status' => 'pending'
     ]);
 
     // ✅ Send email to accounts team
@@ -425,7 +425,7 @@ public function approve($id)
     $po = PurchaseOrder::findOrFail($id);
 
     // ✅ Only pending approval can be approved
-    if ($po->status !== 'pending_approval') {
+    if ($po->status !== 'pending') {
         return response()->json(['message' => 'PO is not pending approval'], 400);
     }
 
@@ -453,7 +453,7 @@ public function reject(Request $request, $id)
     $po = PurchaseOrder::findOrFail($id);
 
     // ✅ Only pending approval can be rejected
-    if ($po->status !== 'pending_approval') {
+    if ($po->status !== 'pending') {
         return response()->json([
             'message' => 'Only pending approval PO can be rejected'
         ], 400);
