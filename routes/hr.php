@@ -78,6 +78,7 @@ Route::prefix('hr/leave_application')->group(function () {
     Route::get('/pending_applications/', [LeaveApplicationController::class, 'show_pending_applications'])->middleware('auth:sanctum');
 });
 
+
 Route::prefix('hr/public_holiday')->group(function () {
     Route::post('/', [PublicHolidayController::class, 'store'])->middleware('auth:sanctum');
 
