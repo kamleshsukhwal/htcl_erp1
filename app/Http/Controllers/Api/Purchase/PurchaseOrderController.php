@@ -439,5 +439,62 @@ public function approve($id)
         'message' => 'PO Approved successfully'
     ]);
 }
+
+
+
+/*** Reject PO */
+
+public function reject(Request $request, $id)
+{
+    $request->validate([
+        'reason' => 'nullable|string|max:500'
+    ]);
+
+    $po = PurchaseOrder::findOrFail($id);
+
+    // ✅ Only pending approval can be rejected
+    if ($po->status !== 'pending_approval') {
+        return response()->json([
+            'message' => 'Only pending approval PO can be rejected'
+        ], 400);
+    }
+
+    $po->update([
+        'status'            => 'rejected',
+        'approved_by'       => auth()->id(),
+        'approved_status'   => 'rejected',
+      //  'rejection_reason'  => $request->reason ?? null,
+    ]);
+
+    // ✅ (Optional) Send email to creator
+    if ($po->created_by) {
+
+        $creator = User::find($po->created_by);
+
+        if ($creator) {
+            $this->sendMail(
+                $creator->email,
+                "PO Rejected - {$po->po_number}",
+                "
+                <div style='font-family: Arial; padding:20px;'>
+                    <h2>Purchase Order Rejected</h2>
+
+                    <p>Hello {$creator->name},</p>
+
+                    <p>Your Purchase Order <b>{$po->po_number}</b> has been rejected.</p>
+
+                    <p><b>Reason:</b> " . ($request->reason ?? 'Not provided') . "</p>
+
+                    <p>Please review and update.</p>
+                </div>
+                "
+            );
+        }
+    }
+
+    return response()->json([
+        'message' => 'PO Rejected successfully'
+    ]);
+}
 }
 
