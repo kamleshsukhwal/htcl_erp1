@@ -275,10 +275,7 @@ public function update(Request $request, $id)
     }
 }
 
-
-
-
-    public function show($id)
+ public function show($id)
 {
     $po = PurchaseOrder::with('items.boqItem')->find($id);
 
@@ -288,11 +285,24 @@ public function update(Request $request, $id)
         ], 404);
     }
 
+    // ✅ Loop items and calculate received qty
+    foreach ($po->items as $item) {
+
+        $receivedQty = \DB::table('dc_in_items')
+            ->join('dc_ins', 'dc_ins.id', '=', 'dc_in_items.dc_in_id')
+            ->where('dc_ins.purchase_order_id', $po->id)
+            ->where('dc_in_items.boq_item_id', $item->boq_item_id)
+            ->sum('dc_in_items.received_qty');
+
+        $item->received_qty = (float) $receivedQty;
+        $item->pending_qty  = (float) $item->ordered_qty - $receivedQty;
+    }
+
     return response()->json([
         'message' => 'Purchase Order details',
         'data' => $po
     ], 200);
- }
+}
 /*
 public function approvebyadmin($id)
 {
