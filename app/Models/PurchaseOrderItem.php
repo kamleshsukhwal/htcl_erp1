@@ -30,7 +30,10 @@ public function purchaseOrder()
     return $this->belongsTo(PurchaseOrder::class);
 }
     
-
+public function dcItems()
+{
+    return $this->hasMany(DCInItem::class, 'boq_item_id', 'boq_item_id');
+}
     // Optional: relationship to your Item table
     
 }
