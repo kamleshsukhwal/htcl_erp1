@@ -110,7 +110,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/project/{project_id}', [PurchaseOrderController::class, 'byProject']);
 Route::post('/{id}/approve', [PurchaseOrderController::class, 'approve']);
 Route::post('/{id}/submit', [PurchaseOrderController::class, 'submit']);
-
+Route::post('/{id}/update', [PurchaseOrderController::class, 'update']);
 /**** Once Purchase order create need to pay to vendor payment  */
 
 Route::post('/vendor-payments', [VendorPaymentController::class, 'store']);

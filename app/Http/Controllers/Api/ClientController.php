@@ -33,6 +33,7 @@ class ClientController extends Controller
             'phone' => 'nullable|string|max:20',
             'pancard_no' => 'nullable|string|max:20',
             'gst_no'=> 'nullable|string|max:50',
+            'address' => 'nullable|string',
             'in_site_location'=>'nullable|string|max:160'
         ]);
 

@@ -185,6 +185,99 @@ AuditLog::create([
 ]);
 */
 
+
+/*** update if status is draft */
+public function update(Request $request, $id)
+{
+    $po = PurchaseOrder::with('items')->findOrFail($id);
+
+    // ✅ Allow only draft or rejected
+    if (!in_array($po->status, ['draft', 'rejected'])) {
+        return response()->json([
+            'message' => 'Only draft or rejected PO can be edited'
+        ], 400);
+    }
+
+    // ✅ Validation
+    $request->validate([
+        'vendor_id'     => 'required|integer',
+        'project_id'    => 'required|integer',
+        'order_date'    => 'required|date',
+        'items'         => 'required|array|min:1',
+        'items.*.item_name'   => 'required|string',
+        'items.*.ordered_qty' => 'required|numeric|min:0.01',
+        'items.*.unit_price'  => 'required|numeric|min:0',
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+
+        // ✅ Recalculate total
+        $total = 0;
+        foreach ($request->items as $item) {
+            $total += $item['ordered_qty'] * $item['unit_price'];
+        }
+
+        $gst = $request->gst_amount ?? ($total * 0.18);
+
+        // ✅ Update PO
+        $po->update([
+            'vendor_id'     => $request->vendor_id,
+            'project_id'    => $request->project_id,
+            'order_date'    => $request->order_date,
+            'delivery_date' => $request->delivery_date,
+            'total_amount'  => $total,
+            'gst_amount'    => $gst,
+            'notes'         => $request->notes,
+            'deliver_to'    => $request->deliver_to,
+        ]);
+
+        // =========================
+        // 🔴 DELETE OLD ITEMS
+        // =========================
+        PurchaseOrderItem::where('purchase_order_id', $po->id)->delete();
+
+        // =========================
+        // ✅ INSERT NEW ITEMS
+        // =========================
+        foreach ($request->items as $item) {
+
+            $base = $item['ordered_qty'] * $item['unit_price'];
+
+            PurchaseOrderItem::create([
+                'purchase_order_id' => $po->id,
+                'boq_item_id'       => $item['boq_item_id'] ?? null,
+                'item_name'         => $item['item_name'],
+                'ordered_qty'       => $item['ordered_qty'],
+                'unit_price'        => $item['unit_price'],
+                'total'             => $base,
+                'is_manual'         => $item['is_manual'] ?? 0,
+                'is_billable'       => $item['is_billable'] ?? 1,
+            ]);
+        }
+
+        DB::commit();
+
+        return response()->json([
+            'message' => 'PO updated successfully',
+            'data' => $po->load('items')
+        ]);
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        return response()->json([
+            'message' => 'Error updating PO',
+            'error'   => $e->getMessage()
+        ], 500);
+    }
+}
+
+
+
+
     public function show($id)
 {
     $po = PurchaseOrder::with('items.boqItem')->find($id);

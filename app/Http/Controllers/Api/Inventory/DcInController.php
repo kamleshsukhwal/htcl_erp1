@@ -41,109 +41,103 @@ public function store(Request $request)
         'items.*.item_name' => 'required_without:items.*.boq_id',
     ]);
 
-    DB::transaction(function () use ($request, $items) {
+    DB::transaction(function () use ($request, $items) { // ✅ Create DC IN
+$dc = DcIn::create([
+    'dc_number' => 'DC' . time(),
+    'vendor_id' => $request->vendor_id,
+    'purchase_order_id' => $request->po_id,
+    'delivery_channel' => $request->delivery_channel,
+    'delivery_date' => now(),
+]);
 
-        // ✅ Create DC IN
-        $dc = DcIn::create([
-            'dc_number' => 'DC' . time(),
-            'vendor_id' => $request->vendor_id,
-            'purchase_order_id' => $request->po_id,
-            'delivery_channel' => $request->delivery_channel,
-            'delivery_date' => now(),
-        ]);
+// ✅ Fetch BOQ item names
+$boqIds = collect($items)->pluck('boq_id')->filter();
+$boqItems = BoqItem::whereIn('id', $boqIds)->pluck('item_name', 'id');
 
-        // ✅ Fetch BOQ item names
-        $boqIds = collect($items)->pluck('boq_id')->filter();
-        $boqItems = BoqItem::whereIn('id', $boqIds)->pluck('item_name', 'id');
+foreach ($items as $item) {
 
-        foreach ($items as $item) {
+    $boqId = $item['boq_id'];
+    $itemName = $item['item_name'] ?? null;
 
-            $boqId = $item['boq_id'];
-            $itemName = $item['item_name'] ?? null;
+    // ✅ Final item name (safe fallback)
+    $itemNameFinal = $boqId
+        ? ($boqItems[$boqId] ?? 'Unknown Item')
+        : ($itemName ?? 'Unknown Item');
 
-            // ✅ Final item name
-            $itemNameFinal = $boqId
-                ? ($boqItems[$boqId] ?? null)
-                : $itemName;
+    // ✅ Save DC Item
+    DcInItem::create([
+        'dc_in_id' => $dc->id,
+        'boq_item_id' => $boqId,
+        'item_name' => $itemNameFinal,
+        'supplied_qty' => $item['qty'],
+    ]);
 
-            // ✅ Save DC Item
-            DcInItem::create([
-                'dc_in_id' => $dc->id,
-                'boq_item_id' => $boqId,
+    // ✅ Stock Update
+    if ($boqId) {
+        $stock = Stock::firstOrCreate(
+            ['boq_item_id' => $boqId],
+            ['available_qty' => 0]
+        );
+    } else {
+        $stock = Stock::firstOrCreate(
+            [
                 'item_name' => $itemNameFinal,
-                'supplied_qty' => $item['qty'],
-            ]);
+                'boq_item_id' => null
+            ],
+            ['available_qty' => 0]
+        );
+    }
 
-            // ✅ Stock Update
-            if ($boqId) {
-                $stock = Stock::firstOrCreate(
-                    ['boq_item_id' => $boqId],
-                    ['available_qty' => 0]
-                );
-            } else {
-                $stock = Stock::firstOrCreate(
-                    [
-                        'item_name' => $itemNameFinal,
-                        'boq_item_id' => null
-                    ],
-                    ['available_qty' => 0]
-                );
-            }
+    $stock->increment('available_qty', $item['qty']);
 
-            $stock->increment('available_qty', $item['qty']);
+    // ✅ Stock Transaction
+    StockTransaction::create([
+        'boq_item_id' => $boqId,
+        'item_name' => $itemNameFinal,
+        'type' => 'IN',
+        'quantity' => $item['qty'],
+        'reference_type' => 'DC_IN',
+        'reference_id' => $dc->id
+    ]);
 
-            // ✅ Stock Transaction
-            StockTransaction::create([
+    // ✅ BOQ Progress
+    if ($boqId) {
+        BoqItemProgress::updateOrCreate(
+            [
                 'boq_item_id' => $boqId,
-                'item_name' => $itemNameFinal,
-                'type' => 'IN',
-                'quantity' => $item['qty'],
-                'reference_type' => 'DC_IN',
-                'reference_id' => $dc->id
-            ]);
+                'entry_date' => now()->toDateString()
+            ],
+            [
+                'executed_qty' => DB::raw("executed_qty + {$item['qty']}")
+            ]
+        );
+    }
+}
 
-            // ✅ BOQ Progress
-            if ($boqId) {
-                BoqItemProgress::updateOrCreate(
-                    [
-                        'boq_item_id' => $boqId,
-                        'entry_date' => now()->toDateString()
-                    ],
-                    [
-                        'executed_qty' => DB::raw("executed_qty + {$item['qty']}")
-                    ]
-                );
-            }
-        }
-
-        // =========================
-        // 🔥 UPDATE PO STATUS (FINAL FIX)
-        // =========================
-
-    $totalOrdered = \App\Models\PurchaseOrderItem::where('purchase_order_id', $request->po_id)
-    ->sum('ordered_qty');
-
-$totalReceived = \App\Models\DcInItem::whereHas('dcIn', function ($q) use ($request) {
-    $q->where('purchase_order_id', $request->po_id);
-})->sum('supplied_qty');
+// =========================
+// 🔥 UPDATE PO STATUS (FIXED)
+// =========================
 
 // ✅ Get current PO
 $po = \App\Models\PurchaseOrder::find($request->po_id);
 
-// ✅ ONLY update if PO is approved (important)
 if ($po && in_array($po->status, ['approved', 'partially_received'])) {
 
-    if ($totalReceived >= $totalOrdered) {
-        $status = 'fully_received';
-    } else {
-        $status = 'partially_received';
-    }
+    $totalOrdered = \App\Models\PurchaseOrderItem::where('purchase_order_id', $request->po_id)
+        ->sum('ordered_qty');
 
+    $totalReceived = \App\Models\DcInItem::whereHas('dcIn', function ($q) use ($request) {
+        $q->where('purchase_order_id', $request->po_id);
+    })->sum('supplied_qty');
+
+    // ✅ Decide status
+    $status = ($totalReceived >= $totalOrdered)
+        ? 'fully_received'
+        : 'partially_received';
+
+    // ✅ Single update (no duplicate)
     $po->update(['status' => $status]);
-}
-\App\Models\PurchaseOrder::where('id', $request->po_id)
-    ->update(['status' => $status]);
-    });
+}});
 
     return response()->json([
         'status' => true,
