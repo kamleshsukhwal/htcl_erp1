@@ -292,7 +292,7 @@ public function update(Request $request, $id)
             ->join('dc_ins', 'dc_ins.id', '=', 'dc_in_items.dc_in_id')
             ->where('dc_ins.purchase_order_id', $po->id)
             ->where('dc_in_items.boq_item_id', $item->boq_item_id)
-            ->sum('dc_in_items.received_qty');
+            ->sum('dc_in_items.supplied_qty');
 
         $item->received_qty = (float) $receivedQty;
         $item->pending_qty  = (float) $item->ordered_qty - $receivedQty;
