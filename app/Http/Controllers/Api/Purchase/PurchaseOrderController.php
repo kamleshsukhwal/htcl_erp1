@@ -462,7 +462,7 @@ public function poWithQty(Request $request)
 
 
 
-/****PO  status update  */
+/****PO  status update  
 public function submit($id)
 {
     $po = PurchaseOrder::findOrFail($id);
@@ -511,6 +511,48 @@ public function submit($id)
     return response()->json([
         'message' => 'PO submitted for approval & email sent'
     ]);
+}*/
+
+public function submit($id)
+{
+    try {
+
+        $po = PurchaseOrder::findOrFail($id);
+
+        if ($po->status !== 'draft') {
+            return response()->json(['message' => 'Only draft PO can be submitted'], 400);
+        }
+
+        $po->update([
+            'status' => 'pending'
+        ]);
+
+        $approvers = User::whereIn('id', [81, 92, 93])->get();
+
+        foreach ($approvers as $approver) {
+
+            \Log::info('Sending mail to: ' . $approver->email);
+
+            $this->sendMail(
+                $approver->email,
+                "PO Approval Required - {$po->po_number}",
+                "Your HTML"
+            );
+        }
+
+        return response()->json([
+            'message' => 'PO submitted & email sent'
+        ]);
+
+    } catch (\Exception $e) {
+
+        \Log::error('Submit PO Error: ' . $e->getMessage());
+
+        return response()->json([
+            'message' => 'Error submitting PO',
+            'error'   => $e->getMessage()
+        ], 500);
+    }
 }
 
 public function approve($id)
