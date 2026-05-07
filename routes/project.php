@@ -104,6 +104,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::prefix('purchase-orders')->group(function () {
+        Route::get('/po-summary', [PurchaseOrderController::class, 'poSummary']);
         Route::get('/', [PurchaseOrderController::class, 'index']);
         Route::post('/', [PurchaseOrderController::class, 'store']); // Create PO
         Route::get('/{id}', [PurchaseOrderController::class, 'show']);
@@ -111,7 +112,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/{id}/approve', [PurchaseOrderController::class, 'approve']);
         Route::post('/{id}/submit', [PurchaseOrderController::class, 'submit']);
         Route::post('/{id}/update', [PurchaseOrderController::class, 'update']);
-        
+
 /**** Once Purchase order create need to pay to vendor payment  */
 
 Route::post('/vendor-payments', [VendorPaymentController::class, 'store']);
@@ -120,7 +121,7 @@ Route::get('/vendor-payments/download/{id}', [VendorPaymentController::class, 'd
 Route::get('/vendor-payments/history/{poId}', [VendorPaymentController::class, 'history']);
    
  
-Route::get('/po-summary', [PurchaseOrderController::class, 'poSummary']);
+
 Route::get('/po-with-qty', [PurchaseOrderController::class, 'poWithQty']);
 });
 
