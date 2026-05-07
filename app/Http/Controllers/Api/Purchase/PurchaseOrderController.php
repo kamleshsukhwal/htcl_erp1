@@ -77,6 +77,7 @@ public function index()
             'vendor_id'     => $request->vendor_id,
             'po_number'     => $request->po_number,
             'project_id'    => $request->project_id,
+             'client_id'    => $request->client_id,
             'order_date'    => $request->order_date,
             'delivery_date' => $request->delivery_date,
 
@@ -111,7 +112,7 @@ public function index()
         $itemName = strtolower(trim(preg_replace('/\s+/', ' ', $item['item_name'])));
 
         $existingBoq = BoqItem::whereRaw('LOWER(TRIM(item_name)) = ?', [$itemName])
-            ->where('boq_id', 1) 
+            ->where('boq_id', $request->project_id) 
             ->first();
 
         if ($existingBoq) {
@@ -171,20 +172,7 @@ public function index()
         ], 500);
     }
 }
-
-/*** enatbel log store after remaining issue resolve 24-feb kamlesh 5:21PM */
-
-/*
-AuditLog::create([
-    'module_name' => 'purchase_orders',
-    'record_id' => $po->id,
-    'action' => 'update',
-    'old_data' => json_encode($oldData),
-    'new_data' => json_encode($po),
-    'performed_by' => auth()->id()
-]);
-*/
-
+ 
 
 /*** update if status is draft */
 public function update(Request $request, $id)
@@ -243,19 +231,74 @@ public function update(Request $request, $id)
         // =========================
         foreach ($request->items as $item) {
 
-            $base = $item['ordered_qty'] * $item['unit_price'];
+    $boqItemId = null;
 
-            PurchaseOrderItem::create([
-                'purchase_order_id' => $po->id,
-                'boq_item_id'       => $item['boq_item_id'] ?? null,
-                'item_name'         => $item['item_name'],
-                'ordered_qty'       => $item['ordered_qty'],
-                'unit_price'        => $item['unit_price'],
-                'total'             => $base,
-                'is_manual'         => $item['is_manual'] ?? 0,
-                'is_billable'       => $item['is_billable'] ?? 1,
+    // ===================================
+    // ✅ Existing BOQ Item
+    // ===================================
+
+    if (empty($item['is_manual']) || $item['is_manual'] == 0) {
+
+        $boqItemId = $item['boq_item_id'] ?? null;
+
+    } else {
+
+        // ===================================
+        // ✅ Manual Item Logic
+        // ===================================
+
+        $itemName = strtolower(
+            trim(
+                preg_replace('/\s+/', ' ', $item['item_name'])
+            )
+        );
+
+        // ✅ Check existing BOQ item
+        $existingBoq = BoqItem::whereRaw(
+            'LOWER(TRIM(item_name)) = ?',
+            [$itemName]
+        )
+        ->where('boq_id', $request->project_id)
+        ->first();
+
+        if ($existingBoq) {
+
+            $boqItemId = $existingBoq->id;
+
+        } else {
+
+            // ✅ Create new BOQ item
+            $boq = BoqItem::create([
+                'boq_id'       => 1,
+                'item_name'    => $item['item_name'],
+                'description'  => $item['item_name'],
+                'unit'         => 'Nos',
+                'quantity'     => $item['ordered_qty'],
+                'rate'         => $item['unit_price'],
+                'total_amount' => $item['ordered_qty'] * $item['unit_price'],
             ]);
+
+            $boqItemId = $boq->id;
         }
+    }
+
+    // ===================================
+    // ✅ Insert Updated PO Item
+    // ===================================
+
+    $base = $item['ordered_qty'] * $item['unit_price'];
+
+    PurchaseOrderItem::create([
+        'purchase_order_id' => $po->id,
+        'boq_item_id'       => $boqItemId,
+        'item_name'         => $item['item_name'],
+        'ordered_qty'       => $item['ordered_qty'],
+        'unit_price'        => $item['unit_price'],
+        'total'             => $base,
+        'is_manual'         => $item['is_manual'] ?? 0,
+        'is_billable'       => $item['is_billable'] ?? 1,
+    ]);
+}
 
         DB::commit();
 
