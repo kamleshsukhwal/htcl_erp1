@@ -19,73 +19,88 @@ class BoqItemController extends Controller
      * Bulk update BOQ items with history
      */
     public function bulkUpdateItems(Request $request, $boqId)
-    {$request->validate([
-    'items' => 'required|array|min:1',
-    'items.*.id' => 'required|exists:boq_items,id',
-]);
+    {  $request->validate([
+        'items' => 'required|array|min:1',
+        'items.*.id' => 'required|exists:boq_items,id',
+    ]);
 
-DB::transaction(function () use ($request, $boqId) {
+    DB::transaction(function () use ($request, $boqId) {
 
-    foreach ($request->items as $row) {
+        foreach ($request->items as $row) {
 
-        $item = BoqItem::where('id', $row['id'])
-            ->where('boq_id', $boqId)
-            ->firstOrFail();
+            // ✅ Find item
+            $item = BoqItem::where('id', $row['id'])
+                ->where('boq_id', $boqId)
+                ->firstOrFail();
 
-        // 🟡 Capture OLD values
-        $oldQty  = $item->quantity;
-        $oldRate = $item->rate;
+            // 🟡 Old values
+            $oldQty  = $item->quantity;
+            $oldRate = $item->rate;
 
-        // 🟢 New values
-        $newQty  = isset($row['new_quantity'])
-            ? $row['new_quantity']
-            : ($row['quantity'] ?? $item->quantity);
+            // 🟢 New values
+            $newQty = isset($row['new_quantity'])
+                ? $row['new_quantity']
+                : ($row['quantity'] ?? $item->quantity);
 
-        $newRate = isset($row['new_rate'])
-            ? $row['new_rate']
-            : ($row['rate'] ?? $item->rate);
+            $newRate = isset($row['new_rate'])
+                ? $row['new_rate']
+                : ($row['rate'] ?? $item->rate);
 
-        // ✅ Item name update
-        $newItemName = $row['item_name'] ?? $item->item_name;
+            // ✅ Item Name
+            $newItemName = trim($row['item_name'] ?? $item->item_name);
 
-        // ✅ Store history ONLY if changed
-        if ($oldQty != $newQty || $oldRate != $newRate) {
+            // ✅ Prevent duplicate item names inside same BOQ
+            $duplicateItem = BoqItem::where('boq_id', $boqId)
+                ->whereRaw('LOWER(item_name) = ?', [strtolower($newItemName)])
+                ->where('id', '!=', $item->id)
+                ->exists();
 
-            BoqItemHistory::create([
-                'boq_id'        => $item->boq_id,
-                'boq_item_id'   => $item->id,
-                'old_quantity'  => $oldQty,
-                'new_quantity'  => $newQty,
-                'old_rate'      => $oldRate,
-                'new_rate'      => $newRate,
-                'changed_by'    => auth()->id(),
-                'change_date'   => now()->toDateString()
+            if ($duplicateItem) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'item_name' => "Item name '{$newItemName}' already exists in this BOQ."
+                ]);
+            }
+
+            // ✅ Store history ONLY if qty/rate changed
+            if ($oldQty != $newQty || $oldRate != $newRate) {
+
+                BoqItemHistory::create([
+                    'boq_id'        => $item->boq_id,
+                    'boq_item_id'   => $item->id,
+                    'old_quantity'  => $oldQty,
+                    'new_quantity'  => $newQty,
+                    'old_rate'      => $oldRate,
+                    'new_rate'      => $newRate,
+                    'changed_by'    => auth()->id(),
+                    'change_date'   => now()->toDateString()
+                ]);
+            }
+
+            // 🔵 Update BOQ Item
+            $item->update([
+                'item_name'     => $newItemName,
+                'sn'            => $row['sn'] ?? $item->sn,
+                'description'   => $row['description'] ?? $item->description,
+                'unit'          => $row['unit'] ?? $item->unit,
+                'quantity'      => $newQty,
+                'rate'          => $newRate,
+                'total_amount'  => $newQty * $newRate,
+                'scope'         => $row['scope'] ?? $item->scope,
+                'approved_make' => $row['approved_make'] ?? $item->approved_make,
+                'offered_make'  => $row['offered_make'] ?? $item->offered_make,
             ]);
         }
 
-        // 🔵 Update live BOQ item
-        $item->update([
-            'item_name'     => $newItemName, // ✅ added
-            'sn'            => $row['sn'] ?? $item->sn,
-            'description'   => $row['description'] ?? $item->description,
-            'unit'          => $row['unit'] ?? $item->unit,
-            'quantity'      => $newQty,
-            'rate'          => $newRate,
-            'total_amount'  => $newQty * $newRate,
-            'scope'         => $row['scope'] ?? $item->scope,
-            'approved_make' => $row['approved_make'] ?? $item->approved_make,
-            'offered_make'  => $row['offered_make'] ?? $item->offered_make,
-        ]);
+        // 🔄 Recalculate BOQ & Project totals
+        $this->recalculateBoqAndProject($boqId);
+    });
+
+    return response()->json([
+        'status'  => true,
+        'message' => 'BOQ items updated successfully with history'
+    ]);
+    
     }
-
-    // 🔄 Recalculate totals for BOQ and parent project
-    $this->recalculateBoqAndProject($boqId);
-});
-
-return response()->json([
-    'status' => true,
-    'message' => 'BOQ items updated successfully with history'
-]);}
 
     /**
      * Recalculate BOQ total and Project total
