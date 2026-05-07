@@ -66,8 +66,8 @@ public function index()
         $calculatedBaseTotal = 0;
 
         foreach ($request->items as $item) {
-            $calculatedBaseTotal += ($item['ordered_qty'] * $item['unit_price']);
-        }
+       $calculatedBaseTotal += ($item['ordered_qty'] * $item['unit_price']);
+        } 
 
        $gstAmount = $request->gst_amount ?? ($calculatedBaseTotal * 0.18);
         $finalTotal = $calculatedBaseTotal;
@@ -241,46 +241,43 @@ public function update(Request $request, $id)
 
         $boqItemId = $item['boq_item_id'] ?? null;
 
-    } else {
+    } else { // ===================================
+// ✅ Manual Item Logic
+// ===================================
 
-        // ===================================
-        // ✅ Manual Item Logic
-        // ===================================
+$itemName = strtolower(
+    trim(
+        preg_replace('/\s+/', ' ', $item['item_name'])
+    )
+);
 
-        $itemName = strtolower(
-            trim(
-                preg_replace('/\s+/', ' ', $item['item_name'])
-            )
-        );
+// ✅ Check existing BOQ item first
+$existingBoq = BoqItem::whereRaw(
+        'LOWER(TRIM(item_name)) = ?',
+        [$itemName]
+    )
+    ->first();
 
-        // ✅ Check existing BOQ item
-        $existingBoq = BoqItem::whereRaw(
-            'LOWER(TRIM(item_name)) = ?',
-            [$itemName]
-        )
-        ->where('boq_id', $request->project_id)
-        ->first();
+if ($existingBoq) {
 
-        if ($existingBoq) {
+    // ✅ Already exists → use same ID
+    $boqItemId = $existingBoq->id;
 
-            $boqItemId = $existingBoq->id;
+} else {
 
-        } else {
+    // ✅ Create new BOQ item
+    $boq = BoqItem::create([
+        'boq_id'       => $request->project_id,
+        'item_name'    => trim($item['item_name']),
+        'description'  => trim($item['item_name']),
+        'unit'         => 'Nos',
+        'quantity'     => $item['ordered_qty'],
+        'rate'         => $item['unit_price'],
+        'total_amount' => $item['ordered_qty'] * $item['unit_price'],
+    ]);
 
-            // ✅ Create new BOQ item
-            $boq = BoqItem::create([
-                'boq_id'       => 1,
-                'item_name'    => $item['item_name'],
-                'description'  => $item['item_name'],
-                'unit'         => 'Nos',
-                'quantity'     => $item['ordered_qty'],
-                'rate'         => $item['unit_price'],
-                'total_amount' => $item['ordered_qty'] * $item['unit_price'],
-            ]);
-
-            $boqItemId = $boq->id;
-        }
-    }
+    $boqItemId = $boq->id;
+}}
 
     // ===================================
     // ✅ Insert Updated PO Item
