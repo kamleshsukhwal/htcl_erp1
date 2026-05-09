@@ -80,7 +80,7 @@ class ProjectController extends Controller
 
         $request->validate([
             'project_name'        => 'sometimes|required|string|max:255',
-            'project_type'        => 'sometimes|required|in:Residential,Commercial,Infra',
+            'project_type'        => 'sometimes|required|in:Residential,Industrial,Commercial,Infrastructure',
             'billing_type'        => 'sometimes|required|in:BOQ,fixed,milestone',
             'start_date'          => 'sometimes|nullable|date',
             'end_date'            => 'sometimes|nullable|date|after_or_equal:start_date',

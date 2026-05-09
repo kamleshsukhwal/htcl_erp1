@@ -124,7 +124,7 @@ public function index()
             $boq = BoqItem::create([
                 'boq_id'       => 1,
                 'item_name'    => $item['item_name'],
-                'description'  => $item['description'],
+                'description'  => $item['description'] ?? $item['item_name'],
                 'unit'         => 'Nos',
                 'quantity'     => $item['ordered_qty'],
                 'rate'         => $item['unit_price'],
@@ -154,8 +154,6 @@ public function index()
         // =========================
         // ✅ SEND EMAIL AFTER COMMIT
         // =========================
-
-       
 
         return response()->json([
             'message' => 'Purchase Order created successfully',
@@ -269,7 +267,7 @@ if ($existingBoq) {
     $boq = BoqItem::create([
         'boq_id'       => $request->project_id,
         'item_name'    => trim($item['item_name']),
-        'description'  => trim($item['description']),
+        'description'  => $item['description'] ?? $item['item_name'],
         'unit'         => 'Nos',
         'quantity'     => $item['ordered_qty'],
         'rate'         => $item['unit_price'],
