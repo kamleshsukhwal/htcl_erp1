@@ -5,6 +5,11 @@ use Illuminate\Support\Facades\Route;
 // BOQ, STOCK, PO dashboard summary
 use App\Http\Controllers\Api\DashboardController;
 
+
+
+///attandance
+  use App\Http\Controllers\Api\MemberAttendanceController;
+use App\Http\Controllers\Api\ProjectTeamController;
 // Project
 use App\Http\Controllers\Api\Project\ProjectController;
 use App\Http\Controllers\Api\Project\ProjectDashboardController;
@@ -206,4 +211,46 @@ Route::get('/payments/{id}/download', [PaymentController::class, 'downloadpaymen
         Route::get('/stock-summary/{project_id}', [DashboardController::class, 'stockSummary']);
         Route::get('/po-summary/{project_id}', [DashboardController::class, 'poSummary']);
     });
+
+  
+
+ 
+// CHECK-IN
+Route::post('/attendance/checkin', [MemberAttendanceController::class, 'checkIn']);
+
+// CHECK-OUT
+Route::post('/attendance/checkout', [MemberAttendanceController::class, 'checkOut']);
+
+// PROJECT ATTENDANCE HISTORY
+Route::get('/attendance/history/{projectId}', [MemberAttendanceController::class, 'history']);
+
+// MEMBER ATTENDANCE HISTORY
+Route::get('/attendance/member/{memberId}',[MemberAttendanceController::class, 'memberHistory']);
+
+// TODAY ATTENDANCE
+Route::get('/attendance/today/{projectId}', [MemberAttendanceController::class, 'todayAttendance']);
+
+// DELETE SESSION (OPTIONAL ADMIN)
+Route::delete(
+    '/attendance/session/{id}',   [MemberAttendanceController::class, 'deleteSession']);
+
+
+    Route::get(
+    '/attendance/report',
+    [MemberAttendanceController::class, 'attendanceReport']
+);
+/*
+====================================================================================
+===============================Project Team Member =================================
+====================================================================================
+*/
+
+Route::post('/project-team/add', [ProjectTeamController::class, 'addMember']);
+
+Route::get('/project-team/{projectId}', [ProjectTeamController::class, 'members']);
+
+Route::delete('/project-team/remove/{id}', [ProjectTeamController::class, 'removeMember']);
+
+Route::post('/project-team/notification/{id}', [ProjectTeamController::class, 'updateNotification']);
+
 });
