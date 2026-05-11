@@ -313,4 +313,5 @@ public function attendanceReport(Request $request)
         'data' => $data
     ]);
 }
+
 }

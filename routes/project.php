@@ -26,9 +26,8 @@ use App\Http\Controllers\Api\Project\ProjectAttachmentController;
 use App\Http\Controllers\Api\Finance\InvoiceController;
 use App\Http\Controllers\Api\Finance\PaymentController;
 use App\Http\Controllers\Api\Finance\VendorPaymentController;
+use App\Http\Controllers\Api\TaxInvoiceController;
 
-
- 
 /*
 |--------------------------------------------------------------------------
 | PROJECT MODULE ROUTES
@@ -118,18 +117,44 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/{id}/submit', [PurchaseOrderController::class, 'submit']);
         Route::post('/{id}/update', [PurchaseOrderController::class, 'update']);
 
-/**** Once Purchase order create need to pay to vendor payment  */
+
+        
+
+/******* Once Purchase order create need to pay to vendor payment  *****************/
 
 Route::post('/vendor-payments', [VendorPaymentController::class, 'store']);
 Route::post('/vendor-payments/{id}/upload', [VendorPaymentController::class, 'uploadAttachment']);
 Route::get('/vendor-payments/download/{id}', [VendorPaymentController::class, 'download']);
 Route::get('/vendor-payments/history/{poId}', [VendorPaymentController::class, 'history']);
-   
- 
-
 Route::get('/po-with-qty', [PurchaseOrderController::class, 'poWithQty']);
 });
 
+
+
+Route::prefix('tax-invoices')->group(function () {
+
+  //  Route::post('/', [TaxInvoiceController::class, 'store']);
+
+   // Route::get('/po/{poId}', [TaxInvoiceController::class, 'index']);
+
+    //Route::get('/file/{id}', [TaxInvoiceController::class, 'viewFile']);
+
+    Route::post('/store', [TaxInvoiceController::class, 'store']);
+
+    Route::get('/po/{poId}', [TaxInvoiceController::class, 'index']);
+
+    Route::get('/show/{id}', [TaxInvoiceController::class, 'show']);
+
+    Route::put('/update/{id}', [TaxInvoiceController::class, 'update']);
+
+    Route::delete('/delete/{id}', [TaxInvoiceController::class, 'destroy']);
+
+    Route::get('/file/{id}', [TaxInvoiceController::class, 'viewFile']);
+
+    Route::get('/download/{id}', [TaxInvoiceController::class, 'downloadFile']);
+
+    Route::get('/summary/{poId}', [TaxInvoiceController::class, 'summary']);
+});
 
 
     /*
@@ -177,12 +202,10 @@ Route::prefix('finance')->group(function () {
     Route::post('/invoices', [InvoiceController::class,'store']);
     Route::get('/invoices/{id}/download', [InvoiceController::class,'download']);
     Route::post('/invoices/{id}/cancel', [InvoiceController::class,'cancel']);
-
     Route::post('/payments', [PaymentController::class,'store']);
     Route::get('/invoices/{id}/payments', [PaymentController::class,'list']);
-
-  Route::post('/payments/{paymentId}/attachments', [PaymentController::class, 'paymentreceiptupload']);
-Route::get('/payments/{id}/download', [PaymentController::class, 'downloadpaymentrecipt']);
+    Route::post('/payments/{paymentId}/attachments', [PaymentController::class, 'paymentreceiptupload']);
+    Route::get('/payments/{id}/download', [PaymentController::class, 'downloadpaymentrecipt']);
     
 });
  
@@ -213,6 +236,11 @@ Route::get('/payments/{id}/download', [PaymentController::class, 'downloadpaymen
     });
 
   
+/*
+====================================================================================
+===============================  Team Member Attendance ============================
+====================================================================================
+*/
 
  
 // CHECK-IN
@@ -231,14 +259,10 @@ Route::get('/attendance/member/{memberId}',[MemberAttendanceController::class, '
 Route::get('/attendance/today/{projectId}', [MemberAttendanceController::class, 'todayAttendance']);
 
 // DELETE SESSION (OPTIONAL ADMIN)
-Route::delete(
-    '/attendance/session/{id}',   [MemberAttendanceController::class, 'deleteSession']);
+Route::delete('/attendance/session/{id}', [MemberAttendanceController::class, 'deleteSession']);
 
 
-    Route::get(
-    '/attendance/report',
-    [MemberAttendanceController::class, 'attendanceReport']
-);
+Route::get('/attendance/report', [MemberAttendanceController::class, 'attendanceReport']);
 /*
 ====================================================================================
 ===============================Project Team Member =================================
